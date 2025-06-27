@@ -1,8 +1,9 @@
 // src/hooks/use-opera-contract.tsx
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
-import { CONTRACT_ABI, CONTRACT_ADDRESS_BASE_SEPOLIA } from '@/lib/contracts';
+import { CONTRACT_ABI } from '@/lib/contracts';
 import { useState, useEffect, useMemo } from 'react';
+import { useContractAddress } from './use-contract-address';
 
 // Types for Employee and Employer data structures
 export type Employee = {
@@ -23,13 +24,14 @@ export type Employer = {
 
 /**
  * Hook to check if the current connected account is registered as an employer
- */
+*/
 export function useIsEmployer() {
     const { address } = useAccount();
+    const CONTRACT_ADDRESS = useContractAddress();
 
     const { data, isLoading, error, refetch } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: CONTRACT_ADDRESS,
         functionName: 'employers',
         args: address ? [address] : undefined,
         query: {
@@ -55,10 +57,11 @@ export function useIsEmployer() {
 export function useEmployerDetails(employerAddress?: string) {
     const { address } = useAccount();
     const targetAddress = employerAddress || address;
+    const CONTRACT_ADDRESS = useContractAddress();
 
     const { data, isLoading, error, refetch } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: CONTRACT_ADDRESS,
         functionName: 'employers',
         args: targetAddress ? [targetAddress as `0x${string}`] : undefined,
         query: {
@@ -90,13 +93,14 @@ export function useEmployerDetails(employerAddress?: string) {
  * Hook to get an employee's details
  */
 export function useEmployeeDetails(employeeAddress: string) {
+    const CONTRACT_ADDRESS = useContractAddress();
     const {
         data,
         isLoading,
         error
     } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: CONTRACT_ADDRESS,
         functionName: 'employees',
         args: employeeAddress ? [employeeAddress as `0x${string}`] : undefined,
         query: {
@@ -136,10 +140,10 @@ export function useEmployeeDetails(employeeAddress: string) {
 export function useEmployeeCount(employerAddress?: string) {
     const { address } = useAccount();
     const targetAddress = employerAddress || address;
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const { data, isLoading, error } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: CONTRACT_ADDRESS,
         functionName: 'getEmployeeCountForEmployer',
         args: targetAddress ? [targetAddress as `0x${string}`] : undefined,
         query: {
@@ -160,10 +164,10 @@ export function useEmployeeCount(employerAddress?: string) {
 export function useEmployerBalance(employerAddress?: string) {
     const { address } = useAccount();
     const targetAddress = employerAddress || address;
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const { data, isLoading, error, refetch } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: CONTRACT_ADDRESS,
         functionName: 'getEmployerBalance',
         args: targetAddress ? [targetAddress as `0x${string}`] : undefined,
         query: {
@@ -185,10 +189,10 @@ export function useEmployerBalance(employerAddress?: string) {
 export function useTotalMonthlySalary(employerAddress?: string) {
     const { address } = useAccount();
     const targetAddress = employerAddress || address;
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const { data, isLoading, error } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: CONTRACT_ADDRESS,
         functionName: 'getTotalMonthlySalaryForEmployer',
         args: targetAddress ? [targetAddress as `0x${string}`] : undefined,
         query: {
@@ -208,15 +212,14 @@ export function useTotalMonthlySalary(employerAddress?: string) {
  */
 export function useRegisterAsEmployer() {
     const { writeContract, isPending, error, data: hash } = useWriteContract();
-
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash
     });
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const register = async (name: string, fee: string = '0.01') => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            address: CONTRACT_ADDRESS,
             functionName: 'registerAsEmployer',
             args: [name],
             value: parseEther(fee),
@@ -238,15 +241,14 @@ export function useRegisterAsEmployer() {
  */
 export function useDepositFunds() {
     const { writeContract, isPending, error, data: hash } = useWriteContract();
-
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash
     });
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const deposit = async (amount: string) => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            address: CONTRACT_ADDRESS,
             functionName: 'depositFunds',
             value: parseEther(amount),
         });
@@ -267,15 +269,14 @@ export function useDepositFunds() {
  */
 export function useAddEmployee() {
     const { writeContract, isPending, error, data: hash } = useWriteContract();
-
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash
     });
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const addEmployee = async (walletAddress: string, name: string, salaryEth: string) => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            address: CONTRACT_ADDRESS,
             functionName: 'addEmployee',
             args: [walletAddress as `0x${string}`, name, parseEther(salaryEth)],
         });
@@ -296,15 +297,14 @@ export function useAddEmployee() {
  */
 export function useRemoveEmployee() {
     const { writeContract, isPending, error, data: hash } = useWriteContract();
-
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash
     });
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const removeEmployee = async (employeeAddress: string) => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            address: CONTRACT_ADDRESS,
             functionName: 'removeEmployee',
             args: [employeeAddress as `0x${string}`],
         });
@@ -325,15 +325,14 @@ export function useRemoveEmployee() {
  */
 export function useUpdateSalary() {
     const { writeContract, isPending, error, data: hash } = useWriteContract();
-
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash
     });
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const updateSalary = async (employeeAddress: string, newSalaryEth: string) => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            address: CONTRACT_ADDRESS,
             functionName: 'updateSalary',
             args: [employeeAddress as `0x${string}`, parseEther(newSalaryEth)],
         });
@@ -354,15 +353,14 @@ export function useUpdateSalary() {
  */
 export function usePayEmployees() {
     const { writeContract, isPending, error, data: hash } = useWriteContract();
-
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash
     });
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const payMyEmployees = async () => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            address: CONTRACT_ADDRESS,
             functionName: 'payMyEmployees',
         });
     };
@@ -383,7 +381,7 @@ export function usePayEmployees() {
 export function useEmployeeList(employerAddress?: string, limit: number = 20) {
     const { address } = useAccount();
     const targetAddress = employerAddress || address;
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -408,7 +406,7 @@ export function useEmployeeList(employerAddress?: string, limit: number = 20) {
 
         return employeeIndices.map(index => ({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            address: CONTRACT_ADDRESS,
             functionName: 'employerToEmployees',
             args: [targetAddress as `0x${string}`, BigInt(index)],
         }));
@@ -464,7 +462,7 @@ export function useEmployeeList(employerAddress?: string, limit: number = 20) {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 abi: CONTRACT_ABI,
-                                address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+                                address: CONTRACT_ADDRESS,
                                 functionName: 'employees',
                                 args: [empAddress],
                             }),
@@ -519,7 +517,7 @@ export function useEmployeeList(employerAddress?: string, limit: number = 20) {
 export function useSimpleEmployeeList(employerAddress?: string, limit: number = 20) {
     const { address } = useAccount();
     const targetAddress = employerAddress || address;
-
+    const CONTRACT_ADDRESS = useContractAddress();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -545,7 +543,7 @@ export function useSimpleEmployeeList(employerAddress?: string, limit: number = 
                 // First get the employee count
                 const { data: countData } = await useReadContract({
                     abi: CONTRACT_ABI,
-                    address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+                    address: CONTRACT_ADDRESS,
                     functionName: 'getEmployeeCountForEmployer',
                     args: [targetAddress as `0x${string}`],
                 });

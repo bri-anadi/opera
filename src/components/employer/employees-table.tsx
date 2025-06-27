@@ -75,7 +75,6 @@ export default function EmployeesTable({
     const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
     const [totalCount, setTotalCount] = useState(0);
 
     // Step 1: Get the count of employees for this employer

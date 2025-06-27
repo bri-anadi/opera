@@ -98,7 +98,7 @@ function AddEmployeeForm() {
                         <CardTitle>Add New Employee</CardTitle>
                     </div>
                     <CardDescription>
-                        Add a new employee to your company's payroll
+                        Add a new employee to your company&apos;s payroll
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -123,7 +123,7 @@ function AddEmployeeForm() {
                                 disabled={isPending || isConfirming}
                             />
                             <p className="text-xs text-muted-foreground">
-                                Enter the employee's Ethereum wallet address
+                                Enter the employee&apos;s Ethereum wallet address
                             </p>
                         </div>
                         <div className="space-y-2">

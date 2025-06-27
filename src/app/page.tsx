@@ -68,7 +68,7 @@ export default function HomePage() {
           <FeatureCard
             icon={<Building className="h-10 w-10" />}
             title="Employer Management"
-            description="Register as an employer and manage your company's payroll system with ease."
+            description="Register as an employer and manage your company&apos;s payroll system with ease."
           />
           <FeatureCard
             icon={<Users className="h-10 w-10" />}

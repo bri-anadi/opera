@@ -536,10 +536,6 @@ export function useSimpleEmployeeList(employerAddress?: string, limit: number = 
             setError(null);
 
             try {
-                // Fetch employees through an API route instead of direct contract calls
-                // This is where you'd call your backend API
-                // For now, we'll use a mock implementation
-
                 // First get the employee count
                 const { data: countData } = await useReadContract({
                     abi: CONTRACT_ABI,

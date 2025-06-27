@@ -4,6 +4,8 @@ import { Funnel_Display } from "next/font/google";
 import "./globals.css";
 import { headers } from "next/headers";
 import ContextProvider from '@/context'
+import { Toaster } from "@/components/ui/sonner"
+import { Navbar } from "@/components/layout/navbar"
 
 const font = Funnel_Display({
   subsets: ['latin'],
@@ -29,7 +31,13 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={font.className}>
-        <ContextProvider cookies={cookies}>{children}</ContextProvider>
+        <ContextProvider cookies={cookies}>
+          <Navbar />
+          <main className="flex-1 container mx-auto min-h-screen px-8">
+            {children}
+          </main>
+          <Toaster position="top-right" />
+        </ContextProvider>
       </body>
     </html>
   )

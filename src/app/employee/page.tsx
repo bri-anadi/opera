@@ -62,7 +62,7 @@ export default function EmployeeDashboard() {
     if (!isConnected) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
-                <h1 className="text-2xl font-bold mb-4">Please connect your wallet</h1>
+                <h1 className="text-2xl mb-4">Please connect your wallet</h1>
                 <p className="text-muted-foreground">Connect your wallet to view your employee dashboard</p>
             </div>
         );
@@ -82,7 +82,7 @@ export default function EmployeeDashboard() {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
                 <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-                <h1 className="text-2xl font-bold mb-2">Error Loading Data</h1>
+                <h1 className="text-2xl mb-2">Error Loading Data</h1>
                 <p className="text-muted-foreground">There was an error loading your employee data</p>
                 <Button onClick={() => router.push('/')} className='mt-8'>Back to Home</Button>
             </div>
@@ -93,7 +93,7 @@ export default function EmployeeDashboard() {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
                 <AlertCircle className="h-12 w-12 mb-4" />
-                <h1 className="text-2xl font-bold mb-2">Not Registered</h1>
+                <h1 className="text-2xl mb-2">Not Registered</h1>
                 <p className="text-muted-foreground mb-4">You are not registered as an employee in the Opera system</p>
                 <p className="text-center max-w-md mb-6">
                     If you believe this is an error, please contact your employer to ensure your wallet address is correctly registered.
@@ -105,7 +105,7 @@ export default function EmployeeDashboard() {
 
     return (
         <div className="container mx-auto py-8">
-            <h1 className="text-3xl font-bold mb-8">Employee Dashboard</h1>
+            <h1 className="text-3xl mb-8">Employee Dashboard</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <Card>

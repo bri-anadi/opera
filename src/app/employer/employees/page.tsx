@@ -39,7 +39,7 @@ function EmployeesList() {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold">Employees</h1>
+                    <h1 className="text-3xl">Employees</h1>
                     <p className="text-muted-foreground">Manage your company's employees</p>
                 </div>
                 <Button onClick={handleAddEmployee}>

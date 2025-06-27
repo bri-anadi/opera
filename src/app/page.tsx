@@ -8,10 +8,12 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import ConnectButton from '@/components/connect-button';
 import { ArrowRight, Coins, Building, Users, Clock, Award } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 export default function HomePage() {
   const { isConnected } = useAccount();
   const { isEmployer } = useIsEmployer();
+  const { theme } = useTheme();
 
   return (
     <div className="space-y-16 py-8">
@@ -22,7 +24,7 @@ export default function HomePage() {
           alt="Opera"
           width={240}
           height={60}
-          className="invert"
+          className={theme === "light" ? "invert" : ""}
           priority
         />
         <h1 className="text-4xl md:text-6xl tracking-tighter">

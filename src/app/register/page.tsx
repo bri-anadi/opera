@@ -75,7 +75,7 @@ function RegisterEmployerForm() {
     if (!isConnected) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
-                <h1 className="text-2xl font-bold mb-4">Please connect your wallet</h1>
+                <h1 className="text-2xl mb-4">Please connect your wallet</h1>
                 <p className="text-muted-foreground">Connect your wallet to register as an employer</p>
             </div>
         );
@@ -85,7 +85,7 @@ function RegisterEmployerForm() {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
                 <CheckCircle2 className="h-16 w-16 text-green-500 mb-6" />
-                <h1 className="text-2xl font-bold mb-2">Registration Successful!</h1>
+                <h1 className="text-2xl mb-2">Registration Successful!</h1>
                 <p className="text-muted-foreground mb-8">You are now registered as an employer</p>
                 <Button onClick={() => router.push('/employer')}>
                     Go to Employer Dashboard

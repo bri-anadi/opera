@@ -133,18 +133,18 @@ function EmployerDashboard() {
 
     return (
         <div className="container mx-auto py-8 pt-24">
-            <h1 className="text-3xl font-bold mb-2">Employer Dashboard</h1>
+            <h1 className="text-3xl mb-2">Employer Dashboard</h1>
             {employer && <p className="text-muted-foreground mb-8">Welcome back, {employer.name}</p>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Balance</CardTitle>
+                        <CardTitle className="text-sm text-muted-foreground">Balance</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center">
                             <Wallet className="mr-2 h-4 w-4 text-muted-foreground" />
-                            <div className="text-2xl font-bold">
+                            <div className="text-2xl">
                                 {isLoadingBalance ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
@@ -172,12 +172,12 @@ function EmployerDashboard() {
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Payroll</CardTitle>
+                        <CardTitle className="text-sm text-muted-foreground">Monthly Payroll</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center">
                             <CircleDollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
-                            <div className="text-2xl font-bold">
+                            <div className="text-2xl">
                                 {isLoadingTotalSalary ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
@@ -206,12 +206,12 @@ function EmployerDashboard() {
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Employees</CardTitle>
+                        <CardTitle className="text-sm text-muted-foreground">Employees</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center">
                             <Users className="mr-2 h-4 w-4 text-muted-foreground" />
-                            <div className="text-2xl font-bold">
+                            <div className="text-2xl">
                                 {isLoadingEmployeeCount ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
@@ -224,12 +224,12 @@ function EmployerDashboard() {
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Runway</CardTitle>
+                        <CardTitle className="text-sm text-muted-foreground">Runway</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center">
                             <CalendarClock className="mr-2 h-4 w-4 text-muted-foreground" />
-                            <div className="text-2xl font-bold">
+                            <div className="text-2xl">
                                 {isLoadingBalance || isLoadingTotalSalary ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : totalSalary === BigInt(0) ? (
@@ -258,12 +258,19 @@ function EmployerDashboard() {
                                     <CardTitle>Employee Management</CardTitle>
                                     <CardDescription>Manage your employees and their salaries</CardDescription>
                                 </div>
-                                <Button asChild size="sm">
-                                    <a href="/employer/employees/add">
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Add Employee
-                                    </a>
-                                </Button>
+                                <div className="flex flex-row gap-2">
+                                    <Button asChild size="sm" variant="outline">
+                                        <a href="/employer/employees">
+                                            View All
+                                        </a>
+                                    </Button>
+                                    <Button asChild size="sm">
+                                        <a href="/employer/employees/add">
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Add Employee
+                                        </a>
+                                    </Button>
+                                </div>
                             </div>
                         </CardHeader>
                         <CardContent>

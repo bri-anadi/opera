@@ -12,18 +12,11 @@ export function Navbar() {
                 <div className="flex items-center gap-6">
                     <Link href="/" className="flex items-center gap-2">
                         <Image
-                            src="/opera-logo.svg"
-                            alt="Opera Logo"
-                            width={32}
-                            height={32}
-                            className="invert dark:invert-0"
-                        />
-                        <Image
                             src="/opera-logogram.svg"
                             alt="Opera"
-                            width={80}
-                            height={40}
-                            className="invert dark:invert-0 hidden sm:block"
+                            width={96}
+                            height={48}
+                            className="invert dark:invert-0"
                         />
                     </Link>
                 </div>

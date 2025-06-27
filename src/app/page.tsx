@@ -60,7 +60,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-12">
+      <section className="py-24">
         <h2 className="text-3xl text-center mb-12">Key Features</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <FeatureCard
@@ -97,9 +97,9 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-12 bg-muted rounded-xl p-8">
+      <section className="py-24 bg-muted rounded-xl p-16">
         <h2 className="text-3xl text-center mb-12">How It Works</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
           <div className="flex flex-col items-center text-center">
             <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center mb-4">1</div>
             <h3 className="text-xl mb-2">Register</h3>
@@ -119,7 +119,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 text-center">
+      <section className="py-96 text-center">
         <h2 className="text-3xl mb-4">Ready to modernize your payroll?</h2>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
           Join Opera today and experience the future of payroll management.
@@ -148,7 +148,7 @@ export default function HomePage() {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="bg-card border rounded-lg p-6 transition-all hover:shadow-md">
+    <div className="bg-card border rounded-lg p-6">
       <div className="text-primary mb-4">{icon}</div>
       <h3 className="text-xl mb-2">{title}</h3>
       <p className="text-muted-foreground">{description}</p>

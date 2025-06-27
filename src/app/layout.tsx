@@ -12,8 +12,11 @@ const font = Funnel_Display({
 })
 
 export const metadata: Metadata = {
-  title: "Opera",
-  description: "Open Payroll Raising Automatically"
+  title: 'Opera - Open Payroll Raising Automatically',
+  description: 'Open Payroll Raising Automatically',
+  icons: {
+    icon: '/opera-logo.svg',
+  },
 };
 
 export default async function RootLayout({

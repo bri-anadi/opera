@@ -1,9 +1,10 @@
+// src/app/register/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
-import { useIsEmployer, useRegisterAsEmployer } from '@/hooks/use-opera-contract';
+import { useRegisterAsEmployer } from '@/hooks/use-opera-contract';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -11,14 +12,22 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle2, Building } from 'lucide-react';
+import ProtectedRoute from '@/components/protected-route';
 
 export default function RegisterPage() {
+    return (
+        <ProtectedRoute requireNotEmployer redirectTo="/employer">
+            <RegisterEmployerForm />
+        </ProtectedRoute>
+    );
+}
+
+function RegisterEmployerForm() {
     const { address, isConnected } = useAccount();
     const router = useRouter();
     const [companyName, setCompanyName] = useState('');
-    const [isRegistering, setIsRegistering] = useState(false);
+    const [, setIsRegistering] = useState(false);
 
-    const { isEmployer, isLoading: isCheckingEmployer } = useIsEmployer();
     const {
         register,
         isPending,
@@ -26,13 +35,6 @@ export default function RegisterPage() {
         isConfirmed,
         error
     } = useRegisterAsEmployer();
-
-    // Redirect if already registered
-    useEffect(() => {
-        if (isEmployer && !isCheckingEmployer) {
-            router.push('/employer');
-        }
-    }, [isEmployer, isCheckingEmployer, router]);
 
     // Handle registration confirmation
     useEffect(() => {
@@ -71,25 +73,16 @@ export default function RegisterPage() {
 
     if (!isConnected) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="flex flex-col items-center justify-center min-h-screen">
                 <h1 className="text-2xl font-bold mb-4">Please connect your wallet</h1>
                 <p className="text-muted-foreground">Connect your wallet to register as an employer</p>
             </div>
         );
     }
 
-    if (isCheckingEmployer) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <Loader2 className="h-12 w-12 animate-spin mb-4" />
-                <p className="text-muted-foreground">Checking registration status...</p>
-            </div>
-        );
-    }
-
     if (isConfirmed) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="flex flex-col items-center justify-center min-h-screen">
                 <CheckCircle2 className="h-16 w-16 text-green-500 mb-6" />
                 <h1 className="text-2xl font-bold mb-2">Registration Successful!</h1>
                 <p className="text-muted-foreground mb-8">You are now registered as an employer</p>
@@ -101,8 +94,8 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="container max-w-md mx-auto py-12">
-            <Card>
+        <div className="container max-w-md mx-auto min-h-screen flex items-center justify-center">
+            <Card className="w-full">
                 <CardHeader className="text-center">
                     <div className="mx-auto bg-primary-foreground p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                         <Building className="h-8 w-8 text-primary" />

@@ -1,3 +1,4 @@
+// src/app/employer/employees/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react';
@@ -5,7 +6,6 @@ import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { formatEther } from 'viem';
 import {
-    useIsEmployer,
     useEmployeeCount,
     useEmployerEmployees,
     useRemoveEmployee,
@@ -50,18 +50,18 @@ import {
     Search,
     Users
 } from 'lucide-react';
-
-type EmployeeListItem = {
-    walletAddress: string;
-    name: string;
-    salary: bigint;
-    lastPayment: bigint;
-    active: boolean;
-    employer: string;
-};
+import ProtectedRoute from '@/components/protected-route';
 
 export default function EmployeesListPage() {
-    const { address, isConnected } = useAccount();
+    return (
+        <ProtectedRoute requireEmployer redirectTo="/register">
+            <EmployeesList />
+        </ProtectedRoute>
+    );
+}
+
+function EmployeesList() {
+    const { address } = useAccount();
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const [employeeAddresses, setEmployeeAddresses] = useState<string[]>([]);
@@ -72,7 +72,6 @@ export default function EmployeesListPage() {
     const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
 
     // Contract hooks
-    const { isEmployer, isLoading: isCheckingEmployer } = useIsEmployer();
     const { count: employeeCount, isLoading: isLoadingCount } = useEmployeeCount();
     const {
         employees,
@@ -93,14 +92,6 @@ export default function EmployeesListPage() {
         isConfirming: isRemoveConfirming,
         isConfirmed: isRemoveConfirmed
     } = useRemoveEmployee();
-
-    // Redirect if not an employer
-    useEffect(() => {
-        if (!isCheckingEmployer && !isEmployer && isConnected) {
-            toast.error('You must be registered as an employer');
-            router.push('/register');
-        }
-    }, [isEmployer, isCheckingEmployer, isConnected, router]);
 
     // For demo purposes, set some mock employee addresses
     // In a real implementation, we would fetch these from the contract
@@ -170,24 +161,6 @@ export default function EmployeesListPage() {
         employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.walletAddress.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    if (!isConnected) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <h1 className="text-2xl font-bold mb-4">Please connect your wallet</h1>
-                <p className="text-muted-foreground">Connect your wallet to view employees</p>
-            </div>
-        );
-    }
-
-    if (isCheckingEmployer) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <Loader2 className="h-12 w-12 animate-spin mb-4" />
-                <p className="text-muted-foreground">Checking employer status...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="container mx-auto py-8">

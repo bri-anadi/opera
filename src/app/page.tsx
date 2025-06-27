@@ -16,7 +16,7 @@ export default function HomePage() {
   return (
     <div className="space-y-16 py-8">
       {/* Hero Section */}
-      <section className="py-12 md:py-48 text-center flex flex-col items-center gap-8">
+      <section className="min-h-screen justify-center text-center flex flex-col items-center gap-8">
         <Image
           src="/opera-logogram.svg"
           alt="Opera"
@@ -119,7 +119,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-96 text-center">
+      <section className="min-h-screen flex flex-col items-center justify-center text-center">
         <h2 className="text-3xl mb-4">Ready to modernize your payroll?</h2>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
           Join Opera today and experience the future of payroll management.
@@ -142,6 +142,13 @@ export default function HomePage() {
           </Button>
         )}
       </section>
+
+      {/* Footer */}
+      <footer className="py-8 text-center">
+        <p className="text-muted-foreground">
+          &copy; {new Date().getFullYear()} Opera. All rights reserved.
+        </p>
+      </footer>
     </div>
   );
 }

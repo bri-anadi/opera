@@ -1,15 +1,18 @@
+// src/app/employee/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { formatEther } from 'viem';
-import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useEmployeeDetails } from '@/hooks/use-opera-contract';
 import { Loader2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 export default function EmployeeDashboard() {
     const { address, isConnected } = useAccount();
+    const router = useRouter();
     const [timeUntilNextPayment, setTimeUntilNextPayment] = useState<string>('');
 
     const {
@@ -51,7 +54,7 @@ export default function EmployeeDashboard() {
 
     if (!isConnected) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="flex flex-col items-center justify-center min-h-screen">
                 <h1 className="text-2xl font-bold mb-4">Please connect your wallet</h1>
                 <p className="text-muted-foreground">Connect your wallet to view your employee dashboard</p>
             </div>
@@ -60,7 +63,7 @@ export default function EmployeeDashboard() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="flex flex-col items-center justify-center min-h-screen">
                 <Loader2 className="h-12 w-12 animate-spin mb-4" />
                 <p className="text-muted-foreground">Loading employee data...</p>
             </div>
@@ -69,7 +72,7 @@ export default function EmployeeDashboard() {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="flex flex-col items-center justify-center min-h-screen">
                 <AlertCircle className="h-12 w-12 text-destructive mb-4" />
                 <h1 className="text-2xl font-bold mb-2">Error Loading Data</h1>
                 <p className="text-muted-foreground">There was an error loading your employee data</p>
@@ -79,13 +82,14 @@ export default function EmployeeDashboard() {
 
     if (!employee || !employee.active || employee.walletAddress === '0x0000000000000000000000000000000000000000') {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="flex flex-col items-center justify-center min-h-screen">
                 <AlertCircle className="h-12 w-12 mb-4" />
                 <h1 className="text-2xl font-bold mb-2">Not Registered</h1>
                 <p className="text-muted-foreground mb-4">You are not registered as an employee in the Opera system</p>
                 <p className="text-center max-w-md mb-6">
                     If you believe this is an error, please contact your employer to ensure your wallet address is correctly registered.
                 </p>
+                <Button onClick={() => router.push('/')} className='mt-8'>Back to Home</Button>
             </div>
         );
     }

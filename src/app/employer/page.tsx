@@ -1,12 +1,10 @@
+// src/app/employer/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
-import { formatEther, parseEther } from 'viem';
-import { useRouter } from 'next/navigation';
+import { formatEther } from 'viem';
 import { toast } from 'sonner';
 import {
-    useIsEmployer,
     useEmployerDetails,
     useEmployeeCount,
     useEmployerBalance,
@@ -16,13 +14,12 @@ import {
 } from '@/hooks/use-opera-contract';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Users,
-    Building,
     Wallet,
     CalendarClock,
     CircleDollarSign,
@@ -33,15 +30,21 @@ import {
 } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ProtectedRoute from '@/components/protected-route';
 
-export default function EmployerDashboard() {
-    const { address, isConnected } = useAccount();
-    const router = useRouter();
+export default function EmployerDashboardPage() {
+    return (
+        <ProtectedRoute requireEmployer redirectTo="/register">
+            <EmployerDashboard />
+        </ProtectedRoute>
+    )
+}
+
+function EmployerDashboard() {
     const [depositAmount, setDepositAmount] = useState('');
     const [depositDialogOpen, setDepositDialogOpen] = useState(false);
 
     // Contract hooks
-    const { isEmployer, isLoading: isLoadingEmployerCheck } = useIsEmployer();
     const { employer, isLoading: isLoadingEmployer, refetch: refetchEmployer } = useEmployerDetails();
     const { count: employeeCount, isLoading: isLoadingEmployeeCount } = useEmployeeCount();
     const { balance, isLoading: isLoadingBalance, refetch: refetchBalance } = useEmployerBalance();
@@ -64,13 +67,6 @@ export default function EmployerDashboard() {
 
     // Calculate months of runway
     const monthsOfRunway = totalSalary ? Number(balance) / Number(totalSalary) : 0;
-
-    // Check if the user is an employer
-    useEffect(() => {
-        if (!isLoadingEmployerCheck && !isEmployer && isConnected) {
-            router.push('/register');
-        }
-    }, [isEmployer, isConnected, isLoadingEmployerCheck, router]);
 
     // Handle deposit transaction results
     useEffect(() => {
@@ -116,20 +112,11 @@ export default function EmployerDashboard() {
         }
     };
 
-    if (!isConnected) {
+    if (isLoadingEmployer) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <h1 className="text-2xl font-bold mb-4">Please connect your wallet</h1>
-                <p className="text-muted-foreground">Connect your wallet to access the employer dashboard</p>
-            </div>
-        );
-    }
-
-    if (isLoadingEmployerCheck || isLoadingEmployer) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="flex flex-col items-center justify-center min-h-screen">
                 <Loader2 className="h-12 w-12 animate-spin mb-4" />
-                <p className="text-muted-foreground">Checking employer status...</p>
+                <p className="text-muted-foreground">Loading employer details...</p>
             </div>
         );
     }

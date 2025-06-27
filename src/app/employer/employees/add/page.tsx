@@ -1,10 +1,10 @@
+// src/app/employer/employees/add/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { isAddress } from 'viem';
-import { useIsEmployer, useAddEmployee } from '@/hooks/use-opera-contract';
+import { useAddEmployee } from '@/hooks/use-opera-contract';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -12,15 +12,22 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft, UserPlus } from 'lucide-react';
+import ProtectedRoute from '@/components/protected-route';
 
 export default function AddEmployeePage() {
-    const { isConnected } = useAccount();
+    return (
+        <ProtectedRoute requireEmployer redirectTo="/register">
+            <AddEmployeeForm />
+        </ProtectedRoute>
+    );
+}
+
+function AddEmployeeForm() {
     const router = useRouter();
     const [employeeName, setEmployeeName] = useState('');
     const [walletAddress, setWalletAddress] = useState('');
     const [salary, setSalary] = useState('');
 
-    const { isEmployer, isLoading: isCheckingEmployer } = useIsEmployer();
     const {
         addEmployee,
         isPending,
@@ -28,14 +35,6 @@ export default function AddEmployeePage() {
         isConfirmed,
         error
     } = useAddEmployee();
-
-    // Redirect if not an employer
-    useEffect(() => {
-        if (!isCheckingEmployer && !isEmployer && isConnected) {
-            toast.error('You must be registered as an employer');
-            router.push('/register');
-        }
-    }, [isEmployer, isCheckingEmployer, isConnected, router]);
 
     // Handle add employee confirmation
     useEffect(() => {
@@ -79,24 +78,6 @@ export default function AddEmployeePage() {
             toast.error('Failed to add employee. Please try again.');
         }
     };
-
-    if (!isConnected) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <h1 className="text-2xl font-bold mb-4">Please connect your wallet</h1>
-                <p className="text-muted-foreground">Connect your wallet to add employees</p>
-            </div>
-        );
-    }
-
-    if (isCheckingEmployer) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <Loader2 className="h-12 w-12 animate-spin mb-4" />
-                <p className="text-muted-foreground">Checking employer status...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="container max-w-md mx-auto py-12">

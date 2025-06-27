@@ -280,38 +280,13 @@ export default function EmployeesTable({
         );
     }
 
-    // Render no employees state
-    if (!employees || employees.length === 0) {
-        return (
-            <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">No employees yet</p>
-                {onAddEmployee && (
-                    <Button onClick={onAddEmployee}>
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Add Your First Employee
-                    </Button>
-                )}
-            </div>
-        );
-    }
-
-    // Render no search results
-    if (filteredEmployees.length === 0 && searchTerm) {
-        return (
-            <div className="text-center py-8">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">No employees found</p>
-                <p className="text-sm text-muted-foreground">Try a different search term</p>
-            </div>
-        );
-    }
-
     // Calculate if there are more employees than we're displaying
     const hasMore = totalCount > maxDisplayed;
+    const hasNoResults = filteredEmployees.length === 0 && searchTerm.length > 0;
 
     return (
         <div className="space-y-4">
-            {/* Search bar */}
+            {/* Search bar - Always visible */}
             {showSearch && (
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -324,66 +299,93 @@ export default function EmployeesTable({
                 </div>
             )}
 
-            {/* Table */}
-            <div className={compact ? "max-h-80 overflow-y-auto" : ""}>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Wallet Address</TableHead>
-                            <TableHead>Salary (ETH)</TableHead>
-                            <TableHead>Status</TableHead>
-                            {showActions && <TableHead className="text-right">Actions</TableHead>}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredEmployees.map((employee) => (
-                            <TableRow key={employee.walletAddress}>
-                                <TableCell className="font-medium">{employee.name}</TableCell>
-                                <TableCell className="font-mono text-xs">
-                                    {employee.walletAddress.substring(0, 6)}...{employee.walletAddress.substring(employee.walletAddress.length - 4)}
-                                </TableCell>
-                                <TableCell>{formatEther(employee.salary)}</TableCell>
-                                <TableCell>
-                                    {employee.active ? (
-                                        <div className="flex items-center gap-1">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Active</span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-1">
-                                            <AlertCircle className="h-4 w-4 text-destructive" />
-                                            <span>Inactive</span>
-                                        </div>
-                                    )}
-                                </TableCell>
-                                {showActions && (
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                onClick={() => openEditDialog(employee)}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                                <span className="sr-only">Edit</span>
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                onClick={() => openDeleteDialog(employee)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                                <span className="sr-only">Delete</span>
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                )}
+            {/* Render no employees state */}
+            {(!employees || employees.length === 0) && (
+                <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">No employees yet</p>
+                    {onAddEmployee && (
+                        <Button onClick={onAddEmployee}>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Add Your First Employee
+                        </Button>
+                    )}
+                </div>
+            )}
+
+            {/* Table - Always render if there are employees */}
+            {employees && employees.length > 0 && (
+                <div className={compact ? "max-h-80 overflow-y-auto" : ""}>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Wallet Address</TableHead>
+                                <TableHead>Salary (ETH)</TableHead>
+                                <TableHead>Status</TableHead>
+                                {showActions && <TableHead className="text-right">Actions</TableHead>}
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+                        </TableHeader>
+                        <TableBody>
+                            {/* Show "no results" message inside the table when search returns no results */}
+                            {hasNoResults ? (
+                                <TableRow>
+                                    <TableCell colSpan={showActions ? 5 : 4} className="text-center py-8">
+                                        <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                        <p className="text-muted-foreground mb-2">No employees found</p>
+                                        <p className="text-sm text-muted-foreground">Try a different search term</p>
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                // Render employees normally when we have results
+                                filteredEmployees.map((employee) => (
+                                    <TableRow key={employee.walletAddress}>
+                                        <TableCell className="font-medium">{employee.name}</TableCell>
+                                        <TableCell className="font-mono text-xs">
+                                            {employee.walletAddress.substring(0, 6)}...{employee.walletAddress.substring(employee.walletAddress.length - 4)}
+                                        </TableCell>
+                                        <TableCell>{formatEther(employee.salary)}</TableCell>
+                                        <TableCell>
+                                            {employee.active ? (
+                                                <div className="flex items-center gap-1">
+                                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                                    <span>Active</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1">
+                                                    <AlertCircle className="h-4 w-4 text-destructive" />
+                                                    <span>Inactive</span>
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                        {showActions && (
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() => openEditDialog(employee)}
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                        <span className="sr-only">Edit</span>
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() => openDeleteDialog(employee)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span className="sr-only">Delete</span>
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        )}
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
 
             {/* "View all" button when there are more employees than shown */}
             {hasMore && (

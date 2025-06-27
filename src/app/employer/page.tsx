@@ -34,6 +34,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ProtectedRoute from '@/components/protected-route';
 import EmployeesTable from '@/components/employer/employees-table';
+import TransactionHistory from '@/components/transaction-history';
 
 export default function EmployerDashboardPage() {
     return (
@@ -287,17 +288,7 @@ function EmployerDashboard() {
                 </TabsContent>
 
                 <TabsContent value="transactions" className="mt-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Recent Transactions</CardTitle>
-                            <CardDescription>View your recent deposit and payment transactions</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-center py-8">
-                                <p className="text-muted-foreground">Transaction history feature coming soon</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {address && <TransactionHistory employerAddress={address} />}
                 </TabsContent>
 
                 <TabsContent value="settings" className="mt-2">

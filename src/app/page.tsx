@@ -1,3 +1,4 @@
+// src/app/page.tsx
 import Image from "next/image";
 import ConnectButton from "@/components/connect-button";
 

@@ -2,7 +2,7 @@
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { CONTRACT_ABI, CONTRACT_ADDRESS_BASE_SEPOLIA } from '@/lib/contracts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 // Types for Employee and Employer data structures
 export type Employee = {
@@ -247,11 +247,10 @@ export function useTotalMonthlySalary(employerAddress?: string) {
  * Hook to get all employee addresses for an employer
  */
 export function useEmployerToEmployees(employerAddress?: string) {
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
-    const [data, setData] = useState<string[]>([]);
+    const { address } = useAccount();
+    const targetAddress = employerAddress || address;
 
-    // First, get the count of employees for this employer
+    // Get the count of employees for this employer
     const {
         data: countData,
         isLoading: isCountLoading,
@@ -260,50 +259,66 @@ export function useEmployerToEmployees(employerAddress?: string) {
         abi: CONTRACT_ABI,
         address: CONTRACT_ADDRESS_BASE_SEPOLIA,
         functionName: 'getEmployeeCountForEmployer',
-        args: employerAddress ? [employerAddress as `0x${string}`] : undefined,
+        args: targetAddress ? [targetAddress as `0x${string}`] : undefined,
         query: {
-            enabled: !!employerAddress,
+            enabled: !!targetAddress,
         }
     });
 
-    // Then, fetch all employee addresses based on the count
+    // Create individual queries for each employee
+    const [data, setData] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    // Use multiple read contracts for each index
+    const employeeCount = countData ? Number(countData) : 0;
+
+    // Create an array of indices to query
+    const indices = useMemo(() => {
+        if (!employeeCount) return [];
+        return Array.from({ length: employeeCount }, (_, i) => i);
+    }, [employeeCount]);
+
+    // Create a query for each index
+    const employeeQueries = indices.map(index => {
+        return useReadContract({
+            abi: CONTRACT_ABI,
+            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            functionName: 'employerToEmployees',
+            args: targetAddress ? [targetAddress as `0x${string}`, BigInt(index)] : undefined,
+            query: {
+                enabled: !!targetAddress && employeeCount > 0,
+            }
+        });
+    });
+
+    // Process the results when they are all available
     useEffect(() => {
-        const fetchEmployeeAddresses = async () => {
-            if (!employerAddress || !countData || countData === BigInt(0)) {
-                setData([]);
-                setIsLoading(false);
-                return;
-            }
+        if (isCountLoading || employeeCount === 0) {
+            setData([]);
+            setIsLoading(isCountLoading);
+            return;
+        }
 
-            try {
-                setIsLoading(true);
-                const employeeCount = Number(countData);
-                const addresses: string[] = [];
+        const allLoaded = employeeQueries.every(query => !query.isLoading);
+        const anyError = employeeQueries.find(query => query.error);
 
-                for (let i = 0; i < employeeCount; i++) {
-                    const result = await useReadContract({
-                        abi: CONTRACT_ABI,
-                        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
-                        functionName: 'employerToEmployees',
-                        args: [employerAddress as `0x${string}`, BigInt(i)],
-                    });
+        if (anyError) {
+            setError(anyError.error instanceof Error ? anyError.error : new Error('Failed to fetch employee addresses'));
+            setIsLoading(false);
+            return;
+        }
 
-                    if (result) {
-                        addresses.push((result as any)[0] as string);
-                    }
-                }
+        if (allLoaded) {
+            const addresses = employeeQueries
+                .map(query => query.data)
+                .filter(Boolean)
+                .map(address => address as string);
 
-                setData(addresses);
-            } catch (err) {
-                console.error('Error fetching employee addresses:', err);
-                setError(err instanceof Error ? err : new Error('Failed to fetch employee addresses'));
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchEmployeeAddresses();
-    }, [employerAddress, countData]);
+            setData(addresses);
+            setIsLoading(false);
+        }
+    }, [isCountLoading, employeeCount, employeeQueries]);
 
     return {
         data,

@@ -80,7 +80,7 @@ function AddEmployeeForm() {
     };
 
     return (
-        <div className="container max-w-md mx-auto py-12">
+        <div className="container max-w-md mx-auto py-12 pt-24">
             <Button
                 variant="ghost"
                 className="mb-4"

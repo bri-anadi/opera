@@ -14,7 +14,7 @@ import {
 } from '@/hooks/use-opera-contract';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -122,7 +122,7 @@ function EmployerDashboard() {
     }
 
     return (
-        <div className="container mx-auto py-8">
+        <div className="container mx-auto py-8 pt-24">
             <h1 className="text-3xl font-bold mb-2">Employer Dashboard</h1>
             {employer && <p className="text-muted-foreground mb-8">Welcome back, {employer.name}</p>}
 
@@ -143,6 +143,21 @@ function EmployerDashboard() {
                             </div>
                         </div>
                     </CardContent>
+                    <CardFooter>
+                        <Button
+                            onClick={() => setDepositDialogOpen(true)}
+                            disabled={isDepositPending || isDepositConfirming}
+                        >
+                            {isDepositPending || isDepositConfirming ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Depositing...
+                                </>
+                            ) : (
+                                <>Deposit Funds</>
+                            )}
+                        </Button>
+                    </CardFooter>
                 </Card>
 
                 <Card>
@@ -161,6 +176,22 @@ function EmployerDashboard() {
                             </div>
                         </div>
                     </CardContent>
+                    <CardFooter>
+                        <Button
+                            onClick={handlePayEmployees}
+                            disabled={isPaymentPending || isPaymentConfirming || totalSalary === BigInt(0) || balance < totalSalary}
+                            variant={totalSalary > BigInt(0) && balance >= totalSalary ? "default" : "outline"}
+                        >
+                            {isPaymentPending || isPaymentConfirming ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Processing Payments...
+                                </>
+                            ) : (
+                                <>Process Payments</>
+                            )}
+                        </Button>
+                    </CardFooter>
                 </Card>
 
                 <Card>
@@ -202,44 +233,6 @@ function EmployerDashboard() {
                 </Card>
             </div>
 
-            <div className="flex flex-wrap gap-4 mb-8">
-                <Button
-                    onClick={() => setDepositDialogOpen(true)}
-                    disabled={isDepositPending || isDepositConfirming}
-                >
-                    {isDepositPending || isDepositConfirming ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Depositing...
-                        </>
-                    ) : (
-                        <>Deposit Funds</>
-                    )}
-                </Button>
-
-                <Button
-                    onClick={handlePayEmployees}
-                    disabled={isPaymentPending || isPaymentConfirming || totalSalary === BigInt(0) || balance < totalSalary}
-                    variant={totalSalary > BigInt(0) && balance >= totalSalary ? "default" : "outline"}
-                >
-                    {isPaymentPending || isPaymentConfirming ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing Payments...
-                        </>
-                    ) : (
-                        <>Process Payments</>
-                    )}
-                </Button>
-
-                <Button asChild variant="outline">
-                    <a href="/employer/employees">
-                        Manage Employees
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                    </a>
-                </Button>
-            </div>
-
             <Tabs defaultValue="employees">
                 <TabsList>
                     <TabsTrigger value="employees">Employees</TabsTrigger>
@@ -247,10 +240,10 @@ function EmployerDashboard() {
                     <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="employees" className="mt-6">
+                <TabsContent value="employees" className="mt-2">
                     <Card>
                         <CardHeader>
-                            <div className="flex justify-between items-center">
+                            <div className="flex flex-col md:flex-row justify-between md:items-center items-start space-y-4 md:space-y-0">
                                 <div>
                                     <CardTitle>Employee Management</CardTitle>
                                     <CardDescription>Manage your employees and their salaries</CardDescription>
@@ -289,7 +282,7 @@ function EmployerDashboard() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="transactions" className="mt-6">
+                <TabsContent value="transactions" className="mt-2">
                     <Card>
                         <CardHeader>
                             <CardTitle>Recent Transactions</CardTitle>
@@ -303,7 +296,7 @@ function EmployerDashboard() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="settings" className="mt-6">
+                <TabsContent value="settings" className="mt-2">
                     <Card>
                         <CardHeader>
                             <CardTitle>Account Settings</CardTitle>

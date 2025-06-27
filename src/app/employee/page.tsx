@@ -47,7 +47,7 @@ export default function EmployeeDashboard() {
         };
 
         updateTimeRemaining();
-        const interval = setInterval(updateTimeRemaining, 60000); // Update every minute
+        const interval = setInterval(updateTimeRemaining, 60000);
 
         return () => clearInterval(interval);
     }, [employee]);

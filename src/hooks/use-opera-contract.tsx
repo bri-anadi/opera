@@ -2,6 +2,7 @@
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { CONTRACT_ABI, CONTRACT_ADDRESS_BASE_SEPOLIA } from '@/lib/contracts';
+import { useState, useEffect } from 'react';
 
 // Types for Employee and Employer data structures
 export type Employee = {
@@ -38,9 +39,7 @@ export function useIsEmployer() {
         }
     });
 
-    // Data returns a tuple with name, balance, active, registrationTime
-    // We only care if active is true
-    const isEmployer = data ? (data as unknown as Employer).active : false;
+    const isEmployer = data ? (data as any)[2] : false;
 
     return {
         isEmployer,
@@ -103,6 +102,63 @@ export function useEmployeeCount(employerAddress?: string) {
     return {
         count: data ? Number(data) : 0,
         isLoading,
+        error,
+    };
+}
+
+/**
+ * Hook to get employee addresses for an employer
+ */
+export function useEmployeeAddresses(employerAddress?: string) {
+    const { address } = useAccount();
+    const targetAddress = employerAddress || address;
+    const { count, isLoading: isLoadingCount } = useEmployeeCount(targetAddress);
+
+    const [addresses, setAddresses] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        if (!targetAddress || count === 0) {
+            setAddresses([]);
+            return;
+        }
+
+        const fetchAddresses = async () => {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const fetchedAddresses: string[] = [];
+
+                for (let i = 0; i < count; i++) {
+                    const result = await useReadContract({
+                        abi: CONTRACT_ABI,
+                        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+                        functionName: 'employerToEmployees',
+                        args: [targetAddress as `0x${string}`, BigInt(i)],
+                    });
+
+                    if (result) {
+                        fetchedAddresses.push((result as any)[0] as string);
+                    }
+                }
+
+                setAddresses(fetchedAddresses);
+            } catch (err) {
+                console.error('Error fetching employee addresses:', err);
+                setError(err instanceof Error ? err : new Error('Failed to fetch employee addresses'));
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchAddresses();
+    }, [targetAddress, count]);
+
+    return {
+        addresses,
+        isLoading: isLoading || isLoadingCount,
         error,
     };
 }

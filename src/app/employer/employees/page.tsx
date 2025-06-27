@@ -1,7 +1,7 @@
 // src/app/employer/employees/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { formatEther } from 'viem';
@@ -61,22 +61,26 @@ export default function EmployeesListPage() {
 }
 
 function EmployeesList() {
+    // All hooks are called at the top level unconditionally
     const { address } = useAccount();
     const router = useRouter();
+
+    // State hooks
     const [searchTerm, setSearchTerm] = useState('');
-    const [employeeAddresses, setEmployeeAddresses] = useState<string[]>([]);
     const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
     const [newSalary, setNewSalary] = useState('');
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
+    const [filteredEmployees, setFilteredEmployees] = useState<any[]>([]);
 
     // Contract hooks
     const { count: employeeCount, isLoading: isLoadingCount } = useEmployeeCount();
+
     const {
         employees,
         isLoading: isLoadingEmployees
-    } = useEmployerEmployees(address, employeeAddresses);
+    } = useEmployerEmployees(address);
 
     // Transaction hooks
     const {
@@ -93,19 +97,56 @@ function EmployeesList() {
         isConfirmed: isRemoveConfirmed
     } = useRemoveEmployee();
 
-    // For demo purposes, set some mock employee addresses
-    // In a real implementation, we would fetch these from the contract
-    useEffect(() => {
-        if (employeeCount > 0) {
-            // This is just a placeholder. In a real implementation, we would fetch
-            // the actual employee addresses from the contract.
-            setEmployeeAddresses([
-                '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-                '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-                '0x1CBd3b2770909D4e10f157cABC84C7264073C9Ec'
-            ].slice(0, employeeCount));
+    const handleUpdateSalary = useCallback(async () => {
+        if (!editingEmployee) return;
+
+        if (!newSalary || parseFloat(newSalary) <= 0) {
+            toast.error('Please enter a valid salary amount');
+            return;
         }
-    }, [employeeCount]);
+
+        try {
+            await updateSalary(editingEmployee, newSalary);
+        } catch (error) {
+            console.error('Update salary error:', error);
+            toast.error('Failed to update salary');
+        }
+    }, [editingEmployee, newSalary, updateSalary]);
+
+    const handleRemoveEmployee = useCallback(async () => {
+        if (!employeeToDelete) return;
+
+        try {
+            await removeEmployee(employeeToDelete);
+        } catch (error) {
+            console.error('Remove employee error:', error);
+            toast.error('Failed to remove employee');
+        }
+    }, [employeeToDelete, removeEmployee]);
+
+    const openEditDialog = useCallback((employee: any) => {
+        setEditingEmployee(employee.walletAddress);
+        setNewSalary(formatEther(employee.salary));
+        setEditDialogOpen(true);
+    }, []);
+
+    const openDeleteDialog = useCallback((employee: any) => {
+        setEmployeeToDelete(employee.walletAddress);
+        setDeleteDialogOpen(true);
+    }, []);
+
+    // Filter employees effect
+    useEffect(() => {
+        if (employees && employees.length > 0) {
+            const filtered = employees.filter(employee =>
+                employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                employee.walletAddress.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            setFilteredEmployees(filtered);
+        } else {
+            setFilteredEmployees([]);
+        }
+    }, [employees, searchTerm]);
 
     // Handle update salary confirmation
     useEffect(() => {
@@ -123,47 +164,95 @@ function EmployeesList() {
             toast.success('Employee removed successfully');
             setDeleteDialogOpen(false);
             setEmployeeToDelete(null);
-            // In a real implementation, we would update the employee list here
         }
     }, [isRemoveConfirmed]);
 
-    // Handle update salary
-    const handleUpdateSalary = async () => {
-        if (!editingEmployee) return;
+    // Render functions (not hooks)
+    const renderLoading = () => (
+        <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
 
-        if (!newSalary || parseFloat(newSalary) <= 0) {
-            toast.error('Please enter a valid salary amount');
-            return;
-        }
+    const renderNoEmployees = () => (
+        <div className="text-center py-8">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-4">No employees yet</p>
+            <Button onClick={() => router.push('/employer/employees/add')}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Your First Employee
+            </Button>
+        </div>
+    );
 
-        try {
-            await updateSalary(editingEmployee, newSalary);
-        } catch (error) {
-            console.error('Update salary error:', error);
-            toast.error('Failed to update salary');
-        }
-    };
+    const renderNoResults = () => (
+        <div className="text-center py-8">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-2">No employees found</p>
+            <p className="text-sm text-muted-foreground">Try a different search term</p>
+        </div>
+    );
 
-    // Handle remove employee
-    const handleRemoveEmployee = async () => {
-        if (!employeeToDelete) return;
-
-        try {
-            await removeEmployee(employeeToDelete);
-        } catch (error) {
-            console.error('Remove employee error:', error);
-            toast.error('Failed to remove employee');
-        }
-    };
-
-    // Filter employees based on search term
-    const filteredEmployees = employees.filter(employee =>
-        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.walletAddress.toLowerCase().includes(searchTerm.toLowerCase())
+    const renderEmployeeTable = () => (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Wallet Address</TableHead>
+                    <TableHead>Salary (ETH)</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {filteredEmployees.map((employee) => (
+                    <TableRow key={employee.walletAddress}>
+                        <TableCell className="font-medium">{employee.name}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                            {employee.walletAddress.substring(0, 6)}...{employee.walletAddress.substring(employee.walletAddress.length - 4)}
+                        </TableCell>
+                        <TableCell>{formatEther(employee.salary)}</TableCell>
+                        <TableCell>
+                            {employee.active ? (
+                                <div className="flex items-center gap-1">
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                    <span>Active</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1">
+                                    <AlertCircle className="h-4 w-4 text-destructive" />
+                                    <span>Inactive</span>
+                                </div>
+                            )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => openEditDialog(employee)}
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                    <span className="sr-only">Edit</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => openDeleteDialog(employee)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">Delete</span>
+                                </Button>
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
     );
 
     return (
-        <div className="container mx-auto py-8">
+        <div className="container mx-auto py-8 pt-24">
             <Button
                 variant="ghost"
                 className="mb-4"
@@ -201,87 +290,13 @@ function EmployeesList() {
                 </CardHeader>
                 <CardContent>
                     {isLoadingEmployees || isLoadingCount ? (
-                        <div className="flex justify-center py-8">
-                            <Loader2 className="h-8 w-8 animate-spin" />
-                        </div>
+                        renderLoading()
                     ) : employeeCount === 0 ? (
-                        <div className="text-center py-8">
-                            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground mb-4">No employees yet</p>
-                            <Button onClick={() => router.push('/employer/employees/add')}>
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                Add Your First Employee
-                            </Button>
-                        </div>
+                        renderNoEmployees()
                     ) : filteredEmployees.length === 0 ? (
-                        <div className="text-center py-8">
-                            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground mb-2">No employees found</p>
-                            <p className="text-sm text-muted-foreground">Try a different search term</p>
-                        </div>
+                        renderNoResults()
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Wallet Address</TableHead>
-                                    <TableHead>Salary (ETH)</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredEmployees.map((employee) => (
-                                    <TableRow key={employee.walletAddress}>
-                                        <TableCell className="font-medium">{employee.name}</TableCell>
-                                        <TableCell className="font-mono text-xs">
-                                            {employee.walletAddress.substring(0, 6)}...{employee.walletAddress.substring(employee.walletAddress.length - 4)}
-                                        </TableCell>
-                                        <TableCell>{formatEther(employee.salary)}</TableCell>
-                                        <TableCell>
-                                            {employee.active ? (
-                                                <div className="flex items-center gap-1">
-                                                    <CheckCircle className="h-4 w-4 text-green-500" />
-                                                    <span>Active</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-1">
-                                                    <AlertCircle className="h-4 w-4 text-destructive" />
-                                                    <span>Inactive</span>
-                                                </div>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="icon"
-                                                    onClick={() => {
-                                                        setEditingEmployee(employee.walletAddress);
-                                                        setNewSalary(formatEther(employee.salary));
-                                                        setEditDialogOpen(true);
-                                                    }}
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                    <span className="sr-only">Edit</span>
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="icon"
-                                                    onClick={() => {
-                                                        setEmployeeToDelete(employee.walletAddress);
-                                                        setDeleteDialogOpen(true);
-                                                    }}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                    <span className="sr-only">Delete</span>
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        renderEmployeeTable()
                     )}
                 </CardContent>
             </Card>

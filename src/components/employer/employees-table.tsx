@@ -1,12 +1,11 @@
-// src/components/employer/EmployeesTable.tsx
+// src/components/employer/employees-table.tsx
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatEther } from 'viem';
+import { useReadContract, useReadContracts } from 'wagmi';
 import {
-    useEmployerToEmployees,
-    useEmployeeDetails,
     useRemoveEmployee,
     useUpdateSalary
 } from '@/hooks/use-opera-contract';
@@ -40,6 +39,7 @@ import {
     UserPlus,
     Loader2
 } from 'lucide-react';
+import { CONTRACT_ABI, CONTRACT_ADDRESS_BASE_SEPOLIA } from '@/lib/contracts';
 
 type Employee = {
     walletAddress: string;
@@ -53,16 +53,17 @@ type Employee = {
 type EmployeesTableProps = {
     employerAddress: string;
     compact?: boolean;
-    maxDisplayed?: number;
     showSearch?: boolean;
     showActions?: boolean;
     onAddEmployee?: () => void;
 };
 
+// Maximum number of employees to display
+const MAX_EMPLOYEES = 20;
+
 export default function EmployeesTable({
     employerAddress,
     compact = false,
-    maxDisplayed,
     showSearch = true,
     showActions = true,
     onAddEmployee
@@ -76,16 +77,100 @@ export default function EmployeesTable({
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
-    const [employees, setEmployees] = useState<Employee[]>([]);
     const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    // Contract hooks for employee addresses
+    // Step 1: Get the count of employees for this employer
     const {
-        data: employeeAddresses,
+        data: employeeCount,
+        isLoading: isLoadingCount,
+    } = useReadContract({
+        abi: CONTRACT_ABI,
+        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        functionName: 'getEmployeeCountForEmployer',
+        args: [employerAddress as `0x${string}`],
+        query: {
+            enabled: !!employerAddress,
+        }
+    });
+
+    // Calculate how many employees to fetch (up to MAX_EMPLOYEES)
+    const limitedCount = useMemo(() => {
+        return employeeCount ? Math.min(Number(employeeCount), MAX_EMPLOYEES) : 0;
+    }, [employeeCount]);
+
+    // Step 2: Generate queries for employee addresses
+    const employeeIndices = useMemo(() => {
+        if (!limitedCount) return [];
+        return Array.from({ length: limitedCount }, (_, i) => i);
+    }, [limitedCount]);
+
+    // Step 3: Fetch all employee addresses using useReadContracts
+    const addressQueries = useMemo(() => {
+        return employeeIndices.map(index => ({
+            abi: CONTRACT_ABI,
+            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            functionName: 'employerToEmployees',
+            args: [employerAddress as `0x${string}`, BigInt(index)],
+        }));
+    }, [employerAddress, employeeIndices]);
+
+    const {
+        data: employeeAddressesData,
         isLoading: isLoadingAddresses,
-        error: addressesError
-    } = useEmployerToEmployees(employerAddress);
+    } = useReadContracts({
+        contracts: addressQueries as any,
+        query: {
+            enabled: addressQueries.length > 0,
+        }
+    });
+
+    // Extract the employee addresses from the result
+    const employeeAddresses = useMemo(() => {
+        if (!employeeAddressesData) return [];
+        return employeeAddressesData
+            .filter(Boolean)
+            .map(result => result.result as string)
+            .filter(address => !!address);
+    }, [employeeAddressesData]);
+
+    // Step 4: Fetch employee details for all addresses using useReadContracts
+    const employeeQueries = useMemo(() => {
+        return employeeAddresses.map(address => ({
+            abi: CONTRACT_ABI,
+            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            functionName: 'employees',
+            args: [address as `0x${string}`],
+        }));
+    }, [employeeAddresses]);
+
+    const {
+        data: employeeDetailsData,
+        isLoading: isLoadingDetails,
+    } = useReadContracts({
+        contracts: employeeQueries as any,
+        query: {
+            enabled: employeeQueries.length > 0,
+        }
+    });
+
+    // Transform employee details data into Employee objects
+    const employees = useMemo(() => {
+        if (!employeeDetailsData) return [];
+
+        return employeeDetailsData
+            .filter(item => item?.result)
+            .map(item => {
+                const data = item.result as any[];
+                return {
+                    walletAddress: data[0] || '',
+                    name: data[1] || '',
+                    salary: data[2] || BigInt(0),
+                    lastPayment: data[3] || BigInt(0),
+                    active: data[4] || false,
+                    employer: data[5] || '',
+                } as Employee;
+            });
+    }, [employeeDetailsData]);
 
     // Transaction hooks
     const {
@@ -102,45 +187,6 @@ export default function EmployeesTable({
         isConfirmed: isRemoveConfirmed
     } = useRemoveEmployee();
 
-    // Load employee details once we have addresses
-    useEffect(() => {
-        const fetchEmployeeDetails = async () => {
-            if (!employeeAddresses || employeeAddresses.length === 0) {
-                setEmployees([]);
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                setIsLoading(true);
-                const employeeDetailsPromises = employeeAddresses.map(async (address) => {
-                    const { employee } = await useEmployeeDetails(address);
-                    if (!employee) return null;
-
-                    return {
-                        walletAddress: employee.walletAddress,
-                        name: employee.name,
-                        salary: employee.salary,
-                        lastPayment: employee.lastPayment,
-                        active: employee.active,
-                        employer: employee.employer,
-                    } as Employee;
-                });
-
-                const employeeDetails = await Promise.all(employeeDetailsPromises);
-                const validEmployees = employeeDetails.filter(Boolean) as Employee[];
-                setEmployees(validEmployees);
-            } catch (err) {
-                console.error('Error fetching employee details:', err);
-                toast.error('Failed to load employee details');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchEmployeeDetails();
-    }, [employeeAddresses]);
-
     // Filter employees based on search term
     useEffect(() => {
         if (!employees) {
@@ -149,16 +195,12 @@ export default function EmployeesTable({
         }
 
         const filtered = employees.filter(employee =>
-            employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            employee.walletAddress.toLowerCase().includes(searchTerm.toLowerCase())
+            employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            employee?.walletAddress?.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
-        if (maxDisplayed && filtered.length > maxDisplayed) {
-            setFilteredEmployees(filtered.slice(0, maxDisplayed));
-        } else {
-            setFilteredEmployees(filtered);
-        }
-    }, [employees, searchTerm, maxDisplayed]);
+        setFilteredEmployees(filtered);
+    }, [employees, searchTerm]);
 
     // Handle update salary
     const handleUpdateSalary = async () => {
@@ -221,8 +263,11 @@ export default function EmployeesTable({
         }
     }, [isRemoveConfirmed]);
 
+    // Check if we're still loading data
+    const isLoading = isLoadingCount || isLoadingAddresses || isLoadingDetails;
+
     // Render loading state
-    if (isLoading || isLoadingAddresses) {
+    if (isLoading) {
         return (
             <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -255,6 +300,9 @@ export default function EmployeesTable({
             </div>
         );
     }
+
+    // Calculate if there are more employees than we're displaying
+    const hasMore = Number(employeeCount) > MAX_EMPLOYEES;
 
     return (
         <div className="space-y-4">
@@ -332,14 +380,14 @@ export default function EmployeesTable({
                 </Table>
             </div>
 
-            {/* "View all" button when displaying limited employees */}
-            {maxDisplayed && employees.length > maxDisplayed && (
+            {/* "View all" button when there are more employees than shown */}
+            {hasMore && (
                 <div className="text-center mt-4">
                     <Button
                         variant="outline"
                         onClick={() => router.push('/employer/employees')}
                     >
-                        View All Employees ({employees.length})
+                        View All Employees ({employeeCount?.toString()})
                     </Button>
                 </div>
             )}

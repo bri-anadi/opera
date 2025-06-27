@@ -4,6 +4,8 @@ import { parseEther } from 'viem';
 import { CONTRACT_ABI, CONTRACT_ADDRESS_BASE_SEPOLIA } from '@/lib/contracts';
 import { useState, useEffect, useMemo } from 'react';
 
+const MAX_EMPLOYEES = 20;
+
 // Types for Employee and Employer data structures
 export type Employee = {
     walletAddress: string;
@@ -167,25 +169,38 @@ export function useEmployeeAddresses(employerAddress?: string) {
  * Hook to get an employee's details
  */
 export function useEmployeeDetails(employeeAddress: string) {
-    const { data, isLoading, error } = useReadContract({
+    const {
+        data,
+        isLoading,
+        error
+    } = useReadContract({
         abi: CONTRACT_ABI,
         address: CONTRACT_ADDRESS_BASE_SEPOLIA,
         functionName: 'employees',
-        args: [employeeAddress as `0x${string}`],
+        args: employeeAddress ? [employeeAddress as `0x${string}`] : undefined,
         query: {
-            enabled: !!employeeAddress,
+            enabled: !!employeeAddress && employeeAddress !== '0x0000000000000000000000000000000000000000',
         }
     });
 
-    // Format the employee data
-    const employee = data ? {
-        walletAddress: (data as any)[0],
-        name: (data as any)[1],
-        salary: (data as any)[2],
-        lastPayment: (data as any)[3],
-        active: (data as any)[4],
-        employer: (data as any)[5],
-    } as Employee : undefined;
+    // Format the employee data with useMemo to avoid unnecessary re-calculations
+    const employee = useMemo(() => {
+        if (!data) return undefined;
+
+        try {
+            return {
+                walletAddress: (data as any)[0] || '0x0000000000000000000000000000000000000000',
+                name: (data as any)[1] || '',
+                salary: (data as any)[2] || BigInt(0),
+                lastPayment: (data as any)[3] || BigInt(0),
+                active: (data as any)[4] || false,
+                employer: (data as any)[5] || '0x0000000000000000000000000000000000000000',
+            };
+        } catch (err) {
+            console.error('Error formatting employee data:', err);
+            return undefined;
+        }
+    }, [data]);
 
     return {
         employee,
@@ -244,7 +259,7 @@ export function useTotalMonthlySalary(employerAddress?: string) {
 }
 
 /**
- * Hook to get all employee addresses for an employer
+ * Hook to get all employee addresses for an employer (limited to 20)
  */
 export function useEmployerToEmployees(employerAddress?: string) {
     const { address } = useAccount();
@@ -254,7 +269,8 @@ export function useEmployerToEmployees(employerAddress?: string) {
     const {
         data: countData,
         isLoading: isCountLoading,
-        error: countError
+        error: countError,
+        refetch: refetchCount
     } = useReadContract({
         abi: CONTRACT_ABI,
         address: CONTRACT_ADDRESS_BASE_SEPOLIA,
@@ -265,21 +281,22 @@ export function useEmployerToEmployees(employerAddress?: string) {
         }
     });
 
-    // Create individual queries for each employee
-    const [data, setData] = useState<string[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
-
-    // Use multiple read contracts for each index
+    // Create an array of query keys based on the count
     const employeeCount = countData ? Number(countData) : 0;
+    const limitedCount = Math.min(employeeCount, MAX_EMPLOYEES);
 
-    // Create an array of indices to query
+    // Create array of indices to query
     const indices = useMemo(() => {
         if (!employeeCount) return [];
-        return Array.from({ length: employeeCount }, (_, i) => i);
-    }, [employeeCount]);
+        return Array.from({ length: limitedCount }, (_, i) => i);
+    }, [employeeCount, limitedCount]);
 
-    // Create a query for each index
+    // Use state to track the complete results
+    const [employeeAddresses, setEmployeeAddresses] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Create individual queries for each employee index
+    // We'll use separate hooks for each index up to MAX_EMPLOYEES
     const employeeQueries = indices.map(index => {
         return useReadContract({
             abi: CONTRACT_ABI,
@@ -287,43 +304,44 @@ export function useEmployerToEmployees(employerAddress?: string) {
             functionName: 'employerToEmployees',
             args: targetAddress ? [targetAddress as `0x${string}`, BigInt(index)] : undefined,
             query: {
-                enabled: !!targetAddress && employeeCount > 0,
+                enabled: !!targetAddress && index < limitedCount,
             }
         });
     });
 
-    // Process the results when they are all available
+    // Combine all the results when they're ready
     useEffect(() => {
-        if (isCountLoading || employeeCount === 0) {
-            setData([]);
-            setIsLoading(isCountLoading);
+        if (isCountLoading) {
+            return;
+        }
+
+        if (employeeCount === 0) {
+            setEmployeeAddresses([]);
+            setIsLoading(false);
             return;
         }
 
         const allLoaded = employeeQueries.every(query => !query.isLoading);
-        const anyError = employeeQueries.find(query => query.error);
-
-        if (anyError) {
-            setError(anyError.error instanceof Error ? anyError.error : new Error('Failed to fetch employee addresses'));
-            setIsLoading(false);
+        if (!allLoaded) {
             return;
         }
 
-        if (allLoaded) {
-            const addresses = employeeQueries
-                .map(query => query.data)
-                .filter(Boolean)
-                .map(address => address as string);
+        const addresses = employeeQueries
+            .map(query => query.data)
+            .filter(Boolean)
+            .map(address => address as string);
 
-            setData(addresses);
-            setIsLoading(false);
-        }
-    }, [isCountLoading, employeeCount, employeeQueries]);
+        setEmployeeAddresses(addresses);
+        setIsLoading(false);
+    }, [employeeQueries, employeeCount, isCountLoading, indices]);
 
     return {
-        data,
+        data: employeeAddresses,
         isLoading: isLoading || isCountLoading,
-        error: error || countError
+        error: countError,
+        refetch: refetchCount,
+        totalCount: employeeCount,
+        hasMore: employeeCount > MAX_EMPLOYEES
     };
 }
 

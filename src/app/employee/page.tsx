@@ -19,31 +19,37 @@ export default function EmployeeDashboard() {
         employee,
         isLoading,
         error
-    } = useEmployeeDetails(address as string);
+    } = useEmployeeDetails(address || '');
 
     // Calculate time until next payment
     useEffect(() => {
-        if (!employee) return;
+        if (!employee || !employee.lastPayment) {
+            setTimeUntilNextPayment('N/A');
+            return;
+        }
 
         const updateTimeRemaining = () => {
-            if (!employee.lastPayment) return;
+            try {
+                const lastPaymentDate = new Date(Number(employee.lastPayment) * 1000);
+                const nextPaymentDate = new Date(lastPaymentDate.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days
+                const now = new Date();
 
-            const lastPaymentDate = new Date(Number(employee.lastPayment) * 1000);
-            const nextPaymentDate = new Date(lastPaymentDate.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days
-            const now = new Date();
+                const timeRemaining = nextPaymentDate.getTime() - now.getTime();
 
-            const timeRemaining = nextPaymentDate.getTime() - now.getTime();
+                if (timeRemaining <= 0) {
+                    setTimeUntilNextPayment('Payment is due');
+                    return;
+                }
 
-            if (timeRemaining <= 0) {
-                setTimeUntilNextPayment('Payment is due');
-                return;
+                const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+
+                setTimeUntilNextPayment(`${days}d ${hours}h ${minutes}m`);
+            } catch (err) {
+                console.error('Error calculating time until next payment:', err);
+                setTimeUntilNextPayment('Error calculating time');
             }
-
-            const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-
-            setTimeUntilNextPayment(`${days}d ${hours}h ${minutes}m`);
         };
 
         updateTimeRemaining();
@@ -71,11 +77,13 @@ export default function EmployeeDashboard() {
     }
 
     if (error) {
+        console.error('Employee details error:', error);
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
                 <AlertCircle className="h-12 w-12 text-destructive mb-4" />
                 <h1 className="text-2xl font-bold mb-2">Error Loading Data</h1>
                 <p className="text-muted-foreground">There was an error loading your employee data</p>
+                <Button onClick={() => router.push('/')} className='mt-8'>Back to Home</Button>
             </div>
         );
     }
@@ -149,7 +157,9 @@ export default function EmployeeDashboard() {
                         <div>
                             <p className="text-sm text-muted-foreground">Last Payment</p>
                             <p className="font-medium">
-                                {employee.lastPayment ? new Date(Number(employee.lastPayment) * 1000).toLocaleDateString() : 'No payments yet'}
+                                {employee.lastPayment && Number(employee.lastPayment) > 0
+                                    ? new Date(Number(employee.lastPayment) * 1000).toLocaleDateString()
+                                    : 'No payments yet'}
                             </p>
                         </div>
                         <div>

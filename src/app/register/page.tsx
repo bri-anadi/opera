@@ -26,8 +26,9 @@ function RegisterEmployerForm() {
     const { address, isConnected } = useAccount();
     const router = useRouter();
     const [companyName, setCompanyName] = useState('');
-    const [, setIsRegistering] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false);
 
+    // Use our centralized registration hook
     const {
         register,
         isPending,

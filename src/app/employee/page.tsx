@@ -15,6 +15,7 @@ export default function EmployeeDashboard() {
     const router = useRouter();
     const [timeUntilNextPayment, setTimeUntilNextPayment] = useState<string>('');
 
+    // Use our centralized employee details hook
     const {
         employee,
         isLoading,

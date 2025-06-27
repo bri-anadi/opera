@@ -28,6 +28,7 @@ function AddEmployeeForm() {
     const [walletAddress, setWalletAddress] = useState('');
     const [salary, setSalary] = useState('');
 
+    // Use our centralized hook for adding employees
     const {
         addEmployee,
         isPending,

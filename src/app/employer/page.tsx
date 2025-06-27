@@ -6,6 +6,8 @@ import { useAccount } from 'wagmi';
 import { formatEther } from 'viem';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+
+// Import our centralized hooks
 import {
     useEmployerDetails,
     useEmployeeCount,
@@ -27,7 +29,6 @@ import {
     CircleDollarSign,
     Loader2,
     PlusCircle,
-    RefreshCw
 } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';

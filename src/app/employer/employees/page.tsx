@@ -21,6 +21,11 @@ function EmployeesList() {
     const { address } = useAccount();
     const router = useRouter();
 
+    // Handle navigation
+    const handleAddEmployee = () => {
+        router.push('/employer/employees/add');
+    };
+
     return (
         <div className="container mx-auto py-8 pt-24">
             <Button
@@ -37,7 +42,7 @@ function EmployeesList() {
                     <h1 className="text-3xl font-bold">Employees</h1>
                     <p className="text-muted-foreground">Manage your company's employees</p>
                 </div>
-                <Button onClick={() => router.push('/employer/employees/add')}>
+                <Button onClick={handleAddEmployee}>
                     <UserPlus className="mr-2 h-4 w-4" />
                     Add Employee
                 </Button>
@@ -52,7 +57,7 @@ function EmployeesList() {
                     {address && (
                         <EmployeesTable
                             employerAddress={address}
-                            onAddEmployee={() => router.push('/employer/employees/add')}
+                            onAddEmployee={handleAddEmployee}
                         />
                     )}
                 </CardContent>

@@ -244,6 +244,75 @@ export function useTotalMonthlySalary(employerAddress?: string) {
 }
 
 /**
+ * Hook to get all employee addresses for an employer
+ */
+export function useEmployerToEmployees(employerAddress?: string) {
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+    const [data, setData] = useState<string[]>([]);
+
+    // First, get the count of employees for this employer
+    const {
+        data: countData,
+        isLoading: isCountLoading,
+        error: countError
+    } = useReadContract({
+        abi: CONTRACT_ABI,
+        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        functionName: 'getEmployeeCountForEmployer',
+        args: employerAddress ? [employerAddress as `0x${string}`] : undefined,
+        query: {
+            enabled: !!employerAddress,
+        }
+    });
+
+    // Then, fetch all employee addresses based on the count
+    useEffect(() => {
+        const fetchEmployeeAddresses = async () => {
+            if (!employerAddress || !countData || countData === BigInt(0)) {
+                setData([]);
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                setIsLoading(true);
+                const employeeCount = Number(countData);
+                const addresses: string[] = [];
+
+                for (let i = 0; i < employeeCount; i++) {
+                    const result = await useReadContract({
+                        abi: CONTRACT_ABI,
+                        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+                        functionName: 'employerToEmployees',
+                        args: [employerAddress as `0x${string}`, BigInt(i)],
+                    });
+
+                    if (result) {
+                        addresses.push((result as any)[0] as string);
+                    }
+                }
+
+                setData(addresses);
+            } catch (err) {
+                console.error('Error fetching employee addresses:', err);
+                setError(err instanceof Error ? err : new Error('Failed to fetch employee addresses'));
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchEmployeeAddresses();
+    }, [employerAddress, countData]);
+
+    return {
+        data,
+        isLoading: isLoading || isCountLoading,
+        error: error || countError
+    };
+}
+
+/**
  * Hook to get all employees for a specific employer
  * Note: This is a simplified implementation that assumes we know the employee addresses
  */

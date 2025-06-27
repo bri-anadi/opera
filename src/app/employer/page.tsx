@@ -2,8 +2,10 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
 import { formatEther } from 'viem';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import {
     useEmployerDetails,
     useEmployeeCount,
@@ -23,7 +25,6 @@ import {
     Wallet,
     CalendarClock,
     CircleDollarSign,
-    ArrowRight,
     Loader2,
     PlusCircle,
     RefreshCw
@@ -31,6 +32,7 @@ import {
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ProtectedRoute from '@/components/protected-route';
+import EmployeesTable from '@/components/employer/employees-table';
 
 export default function EmployerDashboardPage() {
     return (
@@ -41,6 +43,8 @@ export default function EmployerDashboardPage() {
 }
 
 function EmployerDashboard() {
+    const { address } = useAccount();
+    const router = useRouter();
     const [depositAmount, setDepositAmount] = useState('');
     const [depositDialogOpen, setDepositDialogOpen] = useState(false);
 
@@ -110,6 +114,11 @@ function EmployerDashboard() {
             console.error('Payment error:', error);
             toast.error('Failed to process payments');
         }
+    };
+
+    // Handle navigation to add employee page
+    const handleAddEmployee = () => {
+        router.push('/employer/employees/add');
     };
 
     if (isLoadingEmployer) {
@@ -257,26 +266,13 @@ function EmployerDashboard() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            {employeeCount === 0 ? (
-                                <div className="text-center py-8">
-                                    <Users className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-4" />
-                                    <p className="text-muted-foreground mb-2">No employees yet</p>
-                                    <Button asChild variant="outline" size="sm">
-                                        <a href="/employer/employees/add">
-                                            <PlusCircle className="mr-2 h-4 w-4" />
-                                            Add Your First Employee
-                                        </a>
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="text-center py-8">
-                                    <Button asChild variant="outline" size="sm">
-                                        <a href="/employer/employees">
-                                            View All Employees ({employeeCount})
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </a>
-                                    </Button>
-                                </div>
+                            {address && (
+                                <EmployeesTable
+                                    employerAddress={address}
+                                    compact={true}
+                                    maxDisplayed={5}
+                                    onAddEmployee={handleAddEmployee}
+                                />
                             )}
                         </CardContent>
                     </Card>

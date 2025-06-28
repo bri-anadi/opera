@@ -142,7 +142,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl mb-4">Fully Automated</h3>
               <p className="text-muted-foreground">
-                Opera's smart contracts automate the entire payroll process,
+                Opera&apos;s smart contracts automate the entire payroll process,
                 from salary calculations to payments, ensuring employees are paid on time, every time.
               </p>
             </div>

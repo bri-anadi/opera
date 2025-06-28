@@ -39,8 +39,7 @@ export const appkit = createAppKit({
         onramp: true,
     },
     themeVariables: {
-        '--w3m-font-family': 'var(--font-funnel-display)',
-        "--w3m-accent": "var(--primary)"
+        '--w3m-font-family': 'var(--font-funnel-display)'
     },
 })
 

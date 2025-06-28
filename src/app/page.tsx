@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import ConnectButton from '@/components/connect-button';
 import { ArrowRight, Coins, Building, Users, Clock, Award } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { BackgroundBeams } from '@/components/ui/background-beams';
 
 export default function HomePage() {
   const { isConnected } = useAccount();
@@ -19,6 +20,7 @@ export default function HomePage() {
     <div className="space-y-16 py-8">
       {/* Hero Section */}
       <section className="min-h-screen justify-center text-center flex flex-col items-center gap-8">
+        <BackgroundBeams />
         <Image
           src="/opera-logogram.svg"
           alt="Opera"
@@ -27,13 +29,13 @@ export default function HomePage() {
           className={theme === "light" ? "invert" : ""}
           priority
         />
-        <h1 className="text-4xl md:text-6xl tracking-tighter">
+        <h1 className="p-2 text-4xl md:text-7xl tracking-tighter bg-clip-text text-transparent dark:bg-gradient-to-b dark:from-neutral-200 dark:to-neutral-600 bg-gradient-to-b from-neutral-600 to-neutral-900">
           Open Payroll Raising Automatically
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl">
           A decentralized payroll system that automatically pays your employees on time, every time. Built on blockchain for transparency and reliability.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 mt-4">
+        <div className="flex flex-col sm:flex-row gap-4 mt-4 z-10">
           {isConnected ? (
             <>
               {isEmployer ? (

@@ -117,8 +117,7 @@ export default function TransactionHistory({
 
     // Get explorer URL based on chain
     const getExplorerUrl = (txHash: string) => {
-        // Base Sepolia explorer
-        return `https://sepolia.base.org/tx/${txHash}`;
+        return `https://sepolia.basescan.org/tx/${txHash}`;
     };
 
     return (

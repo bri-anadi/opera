@@ -6,9 +6,18 @@ import { useAccount } from 'wagmi';
 import { formatEther } from 'viem';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useEmployeeDetails } from '@/hooks/use-opera-contract';
-import { Loader2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { useEmployeeTransactionHistory, TransactionType } from '@/hooks/use-transaction-history';
+import { Loader2, Clock, CheckCircle, AlertCircle, ArrowDownCircle, Award, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from '@/components/ui/table';
 
 export default function EmployeeDashboard() {
     const { address, isConnected } = useAccount();
@@ -21,6 +30,13 @@ export default function EmployeeDashboard() {
         isLoading,
         error
     } = useEmployeeDetails(address || '');
+
+    // Get transaction history
+    const {
+        transactions,
+        isLoading: isLoadingTransactions,
+        error: transactionsError
+    } = useEmployeeTransactionHistory(address, 3); // Get just the 3 most recent transactions
 
     // Calculate time until next payment
     useEffect(() => {
@@ -68,7 +84,7 @@ export default function EmployeeDashboard() {
         );
     }
 
-    if (isLoading) {
+    if (isLoading || isLoadingTransactions) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
                 <Loader2 className="h-12 w-12 animate-spin mb-4" />
@@ -77,8 +93,8 @@ export default function EmployeeDashboard() {
         );
     }
 
-    if (error) {
-        console.error('Employee details error:', error);
+    if (error || transactionsError) {
+        console.error('Employee details error:', error || transactionsError);
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
                 <AlertCircle className="h-12 w-12 text-destructive mb-4" />
@@ -175,14 +191,59 @@ export default function EmployeeDashboard() {
             </div>
 
             <Card>
-                <CardHeader>
-                    <CardTitle>Payment History</CardTitle>
-                    <CardDescription>Recent salary payments received</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div>
+                        <CardTitle>Payment History</CardTitle>
+                        <CardDescription>Recent salary payments received</CardDescription>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-center text-muted-foreground py-8">
-                        <p>Payment history feature coming soon</p>
-                        <p className="text-sm">This feature will display your recent payment transactions</p>
+                    {/* Show recent transactions or loading state */}
+                    <div className="space-y-8">
+                        {/* Recent transactions list */}
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Amount</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {transactions && transactions.length > 0 ? (
+                                    transactions.slice(0, 3).map(tx => (
+                                        <TableRow key={tx.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    {tx.type === TransactionType.PAYMENT ? (
+                                                        <ArrowDownCircle className="h-4 w-4 text-green-500" />
+                                                    ) : tx.type === TransactionType.BONUS ? (
+                                                        <Award className="h-4 w-4 text-purple-500" />
+                                                    ) : (
+                                                        <DollarSign className="h-4 w-4 text-yellow-500" />
+                                                    )}
+                                                    <span>{tx.type}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{new Date(tx.timestamp * 1000).toLocaleDateString()}</TableCell>
+                                            <TableCell>
+                                                {tx.amount ? (
+                                                    <span className="font-medium">{formatEther(tx.amount)} ETH</span>
+                                                ) : (
+                                                    <span className="text-muted-foreground">-</span>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                                            No payment transactions yet
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
                     </div>
                 </CardContent>
             </Card>

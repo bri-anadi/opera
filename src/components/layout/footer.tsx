@@ -20,8 +20,8 @@ export function Footer() {
     const { theme } = useTheme();
 
     return (
-        <footer className="border-t bg-card/50 mt-24">
-            <div className="container mx-auto py-12">
+        <footer className="border-t bg-card/50 mt-24 rounded-4xl">
+            <div className="container mx-auto px-8 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                     {/* Logo and description */}
                     <div className="space-y-4">

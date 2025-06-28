@@ -114,7 +114,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-card border rounded-lg p-8 text-center">
+            <div className="bg-card border rounded-4xl p-8 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShieldCheck className="h-8 w-8 text-primary" />
               </div>
@@ -125,7 +125,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="bg-card border rounded-lg p-8 text-center">
+            <div className="bg-card border rounded-4xl p-8 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Globe className="h-8 w-8 text-primary" />
               </div>
@@ -136,7 +136,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="bg-card border rounded-lg p-8 text-center">
+            <div className="bg-card border rounded-4xl p-8 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Clock className="h-8 w-8 text-primary" />
               </div>
@@ -148,7 +148,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-24 lg:p-24 rounded-xl">
+          <div className="mt-24 lg:p-24 rounded-4xl">
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="md:w-1/2 flex justify-center">
                 <div className="relative w-full max-w-md aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-4xl flex items-center justify-center">
@@ -277,7 +277,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-24 bg-muted rounded-xl p-16">
+      <section className="py-24 bg-muted rounded-4xl p-16">
         <h2 className="text-3xl text-center mb-12">How It Works</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
           <div className="flex flex-col items-center text-center">
@@ -329,7 +329,7 @@ export default function HomePage() {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="bg-card border rounded-lg p-6">
+    <div className="bg-card border rounded-4xl px-8 py-10">
       <div className="text-primary mb-4">{icon}</div>
       <h3 className="text-xl mb-2">{title}</h3>
       <p className="text-muted-foreground">{description}</p>

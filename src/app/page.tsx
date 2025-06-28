@@ -187,7 +187,7 @@ export default function HomePage() {
           <FeatureCard
             icon={<Building className="h-10 w-10" />}
             title="Employer Management"
-            description="Register as an employer and manage your company's payroll system with ease."
+            description="Register as an employer and manage your company&apos;s payroll system with ease."
           />
           <FeatureCard
             icon={<Users className="h-10 w-10" />}
@@ -224,7 +224,7 @@ export default function HomePage() {
             <h2 className="text-3xl md:text-4xl mb-6">Use Cases</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Opera is designed to serve a wide range of organizations and business models.
-              Here's how different entities can leverage our platform:
+              Here&apos;s how different entities can leverage our platform:
             </p>
           </div>
 

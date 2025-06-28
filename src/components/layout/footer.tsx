@@ -203,7 +203,7 @@ export function Footer() {
                         <div className="pt-2">
                             <Button variant="outline" asChild className="w-full">
                                 <a
-                                    href="#"
+                                    href="https://opera-io.vercel.app/docs"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center justify-center gap-2"

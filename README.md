@@ -462,7 +462,7 @@ export default function ProtectedRoute({
 - Node.js 18+ (recommended Node.js 20 LTS)
 - pnpm package manager (v8.10.0+)
 - MetaMask or another Ethereum wallet
-- Testnet ETH (Sepolia or Base Sepolia)
+- Chain (Base Mainnet or Base Sepolia)
 - Chainlink VRF Subscription
 - Chainlink Automation Registration
 

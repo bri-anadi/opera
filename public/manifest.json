@@ -1,0 +1,17 @@
+{
+  "name": "Opera Payroll",
+  "short_name": "Opera",
+  "description": "Open Payroll Raising Automatically - A decentralized payroll system built on Base",
+  "icons": [
+    {
+      "src": "/opera-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "orientation": "portrait"
+}

@@ -41,7 +41,8 @@ import {
     useRemoveEmployee,
     type Employee
 } from '@/hooks/use-opera-contract';
-import { CONTRACT_ABI, CONTRACT_ADDRESS_BASE_SEPOLIA } from '@/lib/contracts';
+import { CONTRACT_ABI } from '@/lib/contracts';
+import { useContractAddress } from '@/hooks/use-contract-address';
 
 // Maximum number of employees to display
 const MAX_EMPLOYEES = 20;
@@ -64,6 +65,7 @@ export default function EmployeesTable({
     maxDisplayed = MAX_EMPLOYEES
 }: EmployeesTableProps) {
     const router = useRouter();
+    const contractAddress = useContractAddress();
 
     // State hooks
     const [searchTerm, setSearchTerm] = useState('');
@@ -83,7 +85,7 @@ export default function EmployeesTable({
         isLoading: isLoadingCount,
     } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: contractAddress,
         functionName: 'getEmployeeCountForEmployer',
         args: [employerAddress as `0x${string}`],
         query: {
@@ -102,7 +104,7 @@ export default function EmployeesTable({
     // Step 3: Create queries for employee addresses
     const addressQueries = employeeIndices.map(index => ({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: contractAddress,
         functionName: 'employerToEmployees',
         args: [employerAddress as `0x${string}`, BigInt(index)],
     }));
@@ -132,7 +134,7 @@ export default function EmployeesTable({
     // Step 4: Create queries for employee details
     const employeeQueries = employeeAddresses.map(address => ({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: contractAddress,
         functionName: 'employees',
         args: [address as `0x${string}`],
     }));

@@ -1,6 +1,6 @@
 // src/lib/contracts.ts
 export const CONTRACT_ADDRESS_BASE_SEPOLIA = "0x00EB7CB1bD24eF8AB85F52277f419c58E7883759";
-export const CONTRACT_ADDRESS_SEPOLIA = "0xe391860fce51a5d82fdAD0ECcd1627912956c726";
+export const CONTRACT_ADDRESS_BASE_MAINNET = "0x155db1c9dDEB9C79cEdc80F4e0547C727a788Ac0"; // TODO: Replace with actual mainnet contract address
 
 export const CONTRACT_ABI = [
   {

@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import { useTransactionHistory, TransactionType } from '@/hooks/use-transaction-history';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -116,8 +116,16 @@ export default function TransactionHistory({
     }
 
     // Get explorer URL based on chain
+    const chainId = useChainId();
     const getExplorerUrl = (txHash: string) => {
-        return `https://sepolia.basescan.org/tx/${txHash}`;
+        switch (chainId) {
+            case 8453: // Base Mainnet
+                return `https://basescan.org/tx/${txHash}`;
+            case 84532: // Base Sepolia
+                return `https://sepolia.basescan.org/tx/${txHash}`;
+            default:
+                return `https://sepolia.basescan.org/tx/${txHash}`; // fallback
+        }
     };
 
     return (

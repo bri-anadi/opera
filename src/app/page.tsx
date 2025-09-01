@@ -26,6 +26,7 @@ import { useTheme } from 'next-themes';
 import { BackgroundBeams } from '@/components/ui/background-beams';
 import { Card, CardContent } from '@/components/ui/card';
 import { Footer } from '@/components/layout/footer';
+import { MiniKitDetector } from '@/components/minikit-detector';
 
 type UseCaseProps = {
   icon: LucideIcon;
@@ -56,7 +57,8 @@ export default function HomePage() {
   const { theme } = useTheme();
 
   return (
-    <div className="space-y-24 py-8">
+    <MiniKitDetector>
+      <div className="space-y-24 py-8">
       {/* Hero Section */}
       <section className="min-h-screen justify-center text-center flex flex-col items-center gap-8">
         <BackgroundBeams />
@@ -322,8 +324,9 @@ export default function HomePage() {
           </Button>
         )}
       </section>
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </MiniKitDetector>
   );
 }
 

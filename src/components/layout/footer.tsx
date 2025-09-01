@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { CONTRACT_ADDRESS_BASE_SEPOLIA, CONTRACT_ADDRESS_SEPOLIA } from "@/lib/contracts";
+import { CONTRACT_ADDRESS_BASE_SEPOLIA, CONTRACT_ADDRESS_BASE_MAINNET } from "@/lib/contracts";
 import {
     Github,
     Twitter,
@@ -95,10 +95,10 @@ export function Footer() {
                                 </div>
                             </li>
                             <li className="text-sm">
-                                <p className="text-muted-foreground mb-1">Sepolia</p>
+                                <p className="text-muted-foreground mb-1">Base Mainnet</p>
                                 <div className="flex items-center">
                                     <code className="text-xs font-mono bg-muted rounded p-1 truncate max-w-44">
-                                        {CONTRACT_ADDRESS_SEPOLIA}
+                                        {CONTRACT_ADDRESS_BASE_MAINNET}
                                     </code>
                                     <Button
                                         size="icon"
@@ -107,10 +107,10 @@ export function Footer() {
                                         asChild
                                     >
                                         <a
-                                            href={`https://sepolia.etherscan.io/address/${CONTRACT_ADDRESS_SEPOLIA}`}
+                                            href={`https://basescan.org/address/${CONTRACT_ADDRESS_BASE_MAINNET}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            title="View on Sepolia Explorer"
+                                            title="View on Basescan Explorer"
                                         >
                                             <ExternalLink className="h-3 w-3" />
                                         </a>

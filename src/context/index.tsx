@@ -44,11 +44,29 @@ const U2UNetworkNebulas = {
 }
 
 
+const U2UNetworkMainnet = {
+    id: 39,
+    name: 'U2U Network Mainnet',
+    nativeCurrency: {
+        name: 'U2U Token',
+        symbol: 'U2U',
+        decimals: 18,
+    },
+    rpcUrls: {
+        default: {
+            http: ['https://rpc.u2u.xyz'],
+        },
+    },
+    blockExplorers: {
+        default: { name: 'U2U Network Explorer', url: 'https://u2uscan.xyz' },
+    },
+}
+
 // Create the modal
 export const appkit = createAppKit({
     adapters: [wagmiAdapter],
     projectId,
-    networks: [base, baseSepolia, U2UNetworkNebulas],
+    networks: [base, baseSepolia, U2UNetworkNebulas, U2UNetworkMainnet],
     defaultNetwork: base,
     metadata: metadata,
     features: {

@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { CONTRACT_ADDRESS_BASE_SEPOLIA, CONTRACT_ADDRESS_BASE_MAINNET } from "@/lib/contracts";
+import { CONTRACT_ADDRESS_BASE_SEPOLIA, CONTRACT_ADDRESS_BASE_MAINNET, CONTRACT_ADDRESS_U2U_MAINNET, CONTRACT_ADDRESS_U2U_TESTNET } from "@/lib/contracts";
 import {
     Github,
     Twitter,
@@ -110,7 +110,53 @@ export function Footer() {
                                             href={`https://basescan.org/address/${CONTRACT_ADDRESS_BASE_MAINNET}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            title="View on Basescan Explorer"
+                                            title="View on Base Explorer"
+                                        >
+                                            <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                    </Button>
+                                </div>
+                            </li>
+                            <li className="text-sm">
+                                <p className="text-muted-foreground mb-1">U2U Testnet</p>
+                                <div className="flex items-center">
+                                    <code className="text-xs font-mono bg-muted rounded p-1 truncate max-w-44">
+                                        {CONTRACT_ADDRESS_U2U_TESTNET}
+                                    </code>
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-6 w-6 ml-1"
+                                        asChild
+                                    >
+                                        <a
+                                            href={`https://testnet.u2uscan.xyz/address/${CONTRACT_ADDRESS_U2U_TESTNET}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="View on U2U Explorer"
+                                        >
+                                            <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                    </Button>
+                                </div>
+                            </li>
+                            <li className="text-sm">
+                                <p className="text-muted-foreground mb-1">U2U Mainnet</p>
+                                <div className="flex items-center">
+                                    <code className="text-xs font-mono bg-muted rounded p-1 truncate max-w-44">
+                                        {CONTRACT_ADDRESS_U2U_MAINNET}
+                                    </code>
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-6 w-6 ml-1"
+                                        asChild
+                                    >
+                                        <a
+                                            href={`https://u2uscan.xyz/address/${CONTRACT_ADDRESS_U2U_MAINNET}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="View on U2U Explorer"
                                         >
                                             <ExternalLink className="h-3 w-3" />
                                         </a>

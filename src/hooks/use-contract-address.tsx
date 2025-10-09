@@ -1,7 +1,7 @@
 // src/hooks/use-contract-address.tsx
 import { useAppKitNetwork } from '@reown/appkit/react';
 import { useMemo } from 'react';
-import { CONTRACT_ADDRESS_BASE_SEPOLIA, CONTRACT_ADDRESS_BASE_MAINNET, CONTRACT_ADDRESS_U2U_TESTNET } from '@/lib/contracts';
+import { CONTRACT_ADDRESS_BASE_SEPOLIA, CONTRACT_ADDRESS_BASE_MAINNET, CONTRACT_ADDRESS_U2U_TESTNET, CONTRACT_ADDRESS_U2U_MAINNET } from '@/lib/contracts';
 
 /**
  * Hook to get the appropriate contract address based on current network
@@ -20,6 +20,8 @@ export function useContractAddress() {
                 return CONTRACT_ADDRESS_BASE_MAINNET;
             case '84532': // Base Sepolia
                 return CONTRACT_ADDRESS_BASE_SEPOLIA;
+            case '39':
+                return CONTRACT_ADDRESS_U2U_MAINNET;
             case '2484': // U2U Network Nebulas
                 return CONTRACT_ADDRESS_U2U_TESTNET;
             default:

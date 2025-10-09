@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
 /**
     @title Opera - Open Payroll Raising Automatically
 */
-contract OperaContract is Ownable, ReentrancyGuard {
+contract OperaContract is Ownable, AutomationCompatibleInterface, ReentrancyGuard, VRFConsumerBaseV2 {
     struct Employer {
         string name;
         uint256 balance;
@@ -39,7 +42,16 @@ contract OperaContract is Ownable, ReentrancyGuard {
 
     address public lastBonusWinner;
 
+    uint256 public lastRequestId;
+
     uint256 public employerRegistrationFee = 0.01 ether;
+
+    VRFCoordinatorV2Interface private immutable COORDINATOR;
+    bytes32 private immutable s_keyHash;
+    uint256 private s_subscriptionId;
+    uint32 private constant CALLBACK_GAS_LIMIT = 200000;
+    uint16 private constant REQUEST_CONFIRMATIONS = 3;
+    uint32 private constant NUM_WORDS = 1;
 
     modifier onlyEmployer() {
         require(employers[msg.sender].active, "Not an active employer");
@@ -54,11 +66,20 @@ contract OperaContract is Ownable, ReentrancyGuard {
     event SalaryUpdated(address indexed employerAddress, address indexed employeeAddress, uint256 newSalaryEth);
     event PaymentSent(address indexed employerAddress, address indexed employeeAddress, uint256 amount);
     event BonusWinnerSelected(address indexed winner, uint256 amount);
+    event RandomnessRequested(uint256 requestId);
     event BonusAmountUpdated(uint256 newAmount);
     event BonusLotteryToggled(bool enabled);
     event EmployerRegistrationFeeUpdated(uint256 newFee);
 
-    constructor() Ownable(msg.sender) {
+    constructor(
+        address _vrfCoordinator,
+        uint256 _subscriptionId,
+        bytes32 _keyHash
+    ) Ownable(msg.sender) VRFConsumerBaseV2(_vrfCoordinator) {
+        COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
+        s_subscriptionId = _subscriptionId;
+        s_keyHash = _keyHash;
+
         _registerEmployer(msg.sender, "System Admin", true);
     }
 
@@ -232,7 +253,7 @@ contract OperaContract is Ownable, ReentrancyGuard {
         }
 
         if (allSuccessful && bonusLotteryEnabled && employeeAddresses.length > 0) {
-            _selectRandomBonusWinner();
+            _requestRandomness();
         }
 
         return allSuccessful;
@@ -247,8 +268,29 @@ contract OperaContract is Ownable, ReentrancyGuard {
         return _payAllEmployees();
     }
 
-    // Simple pseudorandom bonus selection (replacing Chainlink VRF)
-    function _selectRandomBonusWinner() internal {
+    function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool upkeepNeeded, bytes memory /* performData */) {
+        upkeepNeeded = false;
+
+        for (uint256 i = 0; i < employeeAddresses.length; i++) {
+            address employeeAddress = employeeAddresses[i];
+            Employee storage employee = employees[employeeAddress];
+
+            if (employee.active &&
+                block.timestamp >= employee.lastPayment + PAYMENT_INTERVAL &&
+                employers[employee.employer].balance >= employee.salary) {
+                upkeepNeeded = true;
+                break;
+            }
+        }
+
+        return (upkeepNeeded, "");
+    }
+
+    function performUpkeep(bytes calldata /* performData */) external override {
+        _payAllEmployees();
+    }
+
+    function _requestRandomness() internal {
         require(address(this).balance >= bonusAmount, "Insufficient balance for bonus");
 
         uint256 activeEmployees = 0;
@@ -259,21 +301,40 @@ contract OperaContract is Ownable, ReentrancyGuard {
         }
         require(activeEmployees > 0, "No active employees");
 
-        // Simple pseudorandom selection (not cryptographically secure)
-        // For production use, a more secure randomness source would be needed
-        uint256 randomIndex = uint256(keccak256(abi.encodePacked(
-            block.timestamp,
-            block.prevrandao,
-            block.number,
-            employeeAddresses
-        ))) % activeEmployees;
+        lastRequestId = COORDINATOR.requestRandomWords(
+            s_keyHash,
+            uint64(s_subscriptionId),
+            REQUEST_CONFIRMATIONS,
+            CALLBACK_GAS_LIMIT,
+            NUM_WORDS
+        );
+
+        emit RandomnessRequested(lastRequestId);
+    }
+
+    function fulfillRandomWords(
+        uint256,
+        uint256[] memory _randomWords
+    ) internal override {
+        uint256 activeEmployeesCount = 0;
+        for (uint256 i = 0; i < employeeAddresses.length; i++) {
+            if (employees[employeeAddresses[i]].active) {
+                activeEmployeesCount++;
+            }
+        }
+
+        if (activeEmployeesCount == 0) {
+            return;
+        }
+
+        uint256 winnerIndex = _randomWords[0] % activeEmployeesCount;
 
         address payable winnerAddress;
         uint256 activeCount = 0;
 
         for (uint256 i = 0; i < employeeAddresses.length; i++) {
             if (employees[employeeAddresses[i]].active) {
-                if (activeCount == randomIndex) {
+                if (activeCount == winnerIndex) {
                     winnerAddress = employees[employeeAddresses[i]].walletAddress;
                     break;
                 }
@@ -383,9 +444,13 @@ contract OperaContract is Ownable, ReentrancyGuard {
         payable(owner()).transfer(address(this).balance);
     }
 
+    function updateSubscriptionId(uint256 _newSubscriptionId) external onlyOwner {
+        s_subscriptionId = _newSubscriptionId;
+    }
+
     function runBonusLotteryManually() external onlyOwner {
         require(bonusLotteryEnabled, "Bonus lottery is disabled");
-        _selectRandomBonusWinner();
+        _requestRandomness();
     }
 
     receive() external payable {

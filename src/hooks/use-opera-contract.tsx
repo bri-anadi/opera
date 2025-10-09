@@ -31,7 +31,7 @@ export function useIsEmployer() {
 
     const { data, isLoading, error, refetch } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS,
+        address: CONTRACT_ADDRESS as `0x${string}`,
         functionName: 'employers',
         args: address ? [address] : undefined,
         query: {
@@ -61,7 +61,7 @@ export function useEmployerDetails(employerAddress?: string) {
 
     const { data, isLoading, error, refetch } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS,
+        address: CONTRACT_ADDRESS as `0x${string}`,
         functionName: 'employers',
         args: targetAddress ? [targetAddress as `0x${string}`] : undefined,
         query: {
@@ -100,7 +100,7 @@ export function useEmployeeDetails(employeeAddress: string) {
         error
     } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS,
+        address: CONTRACT_ADDRESS as `0x${string}`,
         functionName: 'employees',
         args: employeeAddress ? [employeeAddress as `0x${string}`] : undefined,
         query: {
@@ -143,7 +143,7 @@ export function useEmployeeCount(employerAddress?: string) {
     const CONTRACT_ADDRESS = useContractAddress();
     const { data, isLoading, error } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS,
+        address: CONTRACT_ADDRESS as `0x${string}`,
         functionName: 'getEmployeeCountForEmployer',
         args: targetAddress ? [targetAddress as `0x${string}`] : undefined,
         query: {
@@ -167,7 +167,7 @@ export function useEmployerBalance(employerAddress?: string) {
     const CONTRACT_ADDRESS = useContractAddress();
     const { data, isLoading, error, refetch } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS,
+        address: CONTRACT_ADDRESS as `0x${string}`,
         functionName: 'getEmployerBalance',
         args: targetAddress ? [targetAddress as `0x${string}`] : undefined,
         query: {
@@ -192,7 +192,7 @@ export function useTotalMonthlySalary(employerAddress?: string) {
     const CONTRACT_ADDRESS = useContractAddress();
     const { data, isLoading, error } = useReadContract({
         abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS,
+        address: CONTRACT_ADDRESS as `0x${string}`,
         functionName: 'getTotalMonthlySalaryForEmployer',
         args: targetAddress ? [targetAddress as `0x${string}`] : undefined,
         query: {
@@ -219,7 +219,7 @@ export function useRegisterAsEmployer() {
     const register = async (name: string, fee: string = '0.01') => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS,
+            address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'registerAsEmployer',
             args: [name],
             value: parseEther(fee),
@@ -248,7 +248,7 @@ export function useDepositFunds() {
     const deposit = async (amount: string) => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS,
+            address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'depositFunds',
             value: parseEther(amount),
         });
@@ -276,7 +276,7 @@ export function useAddEmployee() {
     const addEmployee = async (walletAddress: string, name: string, salaryEth: string) => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS,
+            address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'addEmployee',
             args: [walletAddress as `0x${string}`, name, parseEther(salaryEth)],
         });
@@ -304,7 +304,7 @@ export function useRemoveEmployee() {
     const removeEmployee = async (employeeAddress: string) => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS,
+            address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'removeEmployee',
             args: [employeeAddress as `0x${string}`],
         });
@@ -332,7 +332,7 @@ export function useUpdateSalary() {
     const updateSalary = async (employeeAddress: string, newSalaryEth: string) => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS,
+            address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'updateSalary',
             args: [employeeAddress as `0x${string}`, parseEther(newSalaryEth)],
         });
@@ -360,7 +360,7 @@ export function usePayEmployees() {
     const payMyEmployees = async () => {
         writeContract({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS,
+            address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'payMyEmployees',
         });
     };
@@ -406,11 +406,11 @@ export function useEmployeeList(employerAddress?: string, limit: number = 20) {
 
         return employeeIndices.map(index => ({
             abi: CONTRACT_ABI,
-            address: CONTRACT_ADDRESS,
+            address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'employerToEmployees',
             args: [targetAddress as `0x${string}`, BigInt(index)],
         }));
-    }, [targetAddress, employeeIndices]);
+    }, [targetAddress, employeeIndices, CONTRACT_ADDRESS]);
 
     // Fetch employee addresses and details
     useEffect(() => {

@@ -8,7 +8,6 @@ import { Toaster } from "@/components/ui/sonner"
 import { Navbar } from "@/components/layout/navbar"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { MiniKitProvider } from "@/components/minikit-provider"
 
 const font = Funnel_Display({
   subsets: ['latin'],
@@ -43,21 +42,19 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={font.className}>
         <ContextProvider cookies={cookies}>
-          <MiniKitProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <Navbar />
-              <main className="flex-1 container mx-auto min-h-screen px-8">
-                {children}
-              </main>
-              <ThemeToggle />
-              <Toaster position="top-right" />
-            </ThemeProvider>
-          </MiniKitProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Navbar />
+            <main className="flex-1 container mx-auto min-h-screen px-8">
+              {children}
+            </main>
+            <ThemeToggle />
+            <Toaster position="top-right" />
+          </ThemeProvider>
         </ContextProvider>
       </body>
     </html>

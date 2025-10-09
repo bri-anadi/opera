@@ -23,11 +23,32 @@ const metadata = {
     icons: ['https://assets.reown.com/reown-profile-pic.png']
 }
 
+
+const U2UNetworkNebulas = {
+    id: 2484,
+    name: 'U2U Network Nebulas',
+    nativeCurrency: {
+        name: 'U2U Token',
+        symbol: 'U2U',
+        decimals: 18,
+    },
+    rpcUrls: {
+        default: {
+            http: ['https://rpc-nebulas-testnet.u2u.xyz'],
+        },
+    },
+    blockExplorers: {
+        default: { name: 'U2U Network Explorer', url: 'https://testnet.u2uscan.xyz' },
+    },
+    testnet: true,
+}
+
+
 // Create the modal
 export const appkit = createAppKit({
     adapters: [wagmiAdapter],
     projectId,
-    networks: [base, baseSepolia],
+    networks: [base, baseSepolia, U2UNetworkNebulas],
     defaultNetwork: base,
     metadata: metadata,
     features: {

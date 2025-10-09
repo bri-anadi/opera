@@ -1,6 +1,7 @@
 // src/lib/contracts.ts
-export const CONTRACT_ADDRESS_BASE_SEPOLIA = "0x00EB7CB1bD24eF8AB85F52277f419c58E7883759";
-export const CONTRACT_ADDRESS_BASE_MAINNET = "0x155db1c9dDEB9C79cEdc80F4e0547C727a788Ac0"; // TODO: Replace with actual mainnet contract address
+export const CONTRACT_ADDRESS_BASE_SEPOLIA = "0x4c4Dc6745d992d1614Fb19258F2d26BC26e90f93";
+export const CONTRACT_ADDRESS_U2U_TESTNET = "0x3FB79b82d141DDa0A9FCD030e1810C5a264bA64e";
+export const CONTRACT_ADDRESS_BASE_MAINNET = "0x4c4Dc6745d992d1614Fb19258F2d26BC26e90f93"; // TODO: Replace with actual mainnet contract address
 
 export const CONTRACT_ABI = [
   {
@@ -27,41 +28,9 @@ export const CONTRACT_ABI = [
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_vrfCoordinator",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_subscriptionId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "_keyHash",
-        "type": "bytes32"
-      }
-    ],
+    "inputs": [],
     "stateMutability": "nonpayable",
     "type": "constructor"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "have",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "want",
-        "type": "address"
-      }
-    ],
-    "name": "OnlyCoordinatorCanFulfill",
-    "type": "error"
   },
   {
     "inputs": [
@@ -331,50 +300,6 @@ export const CONTRACT_ABI = [
   {
     "inputs": [
       {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "name": "performUpkeep",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "requestId",
-        "type": "uint256"
-      }
-    ],
-    "name": "RandomnessRequested",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "requestId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "randomWords",
-        "type": "uint256[]"
-      }
-    ],
-    "name": "rawFulfillRandomWords",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "string",
         "name": "_name",
         "type": "string"
@@ -526,19 +451,6 @@ export const CONTRACT_ABI = [
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_newSubscriptionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "updateSubscriptionId",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "stateMutability": "payable",
     "type": "receive"
   },
@@ -563,30 +475,6 @@ export const CONTRACT_ABI = [
         "internalType": "bool",
         "name": "",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "name": "checkUpkeep",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "upkeepNeeded",
-        "type": "bool"
-      },
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
       }
     ],
     "stateMutability": "view",
@@ -888,19 +776,6 @@ export const CONTRACT_ABI = [
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "lastRequestId",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",

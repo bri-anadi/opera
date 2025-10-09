@@ -60,7 +60,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
 
                 // Fetch deposit events
                 const depositEvents = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
+                    address: CONTRACT_ADDRESS as `0x${string}`,
                     event: {
                         type: 'event',
                         name: 'EmployerFundsDeposited',
@@ -78,7 +78,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
 
                 // Fetch payment events
                 const paymentEvents = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
+                    address: CONTRACT_ADDRESS as `0x${string}`,
                     event: {
                         type: 'event',
                         name: 'PaymentSent',
@@ -97,7 +97,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
 
                 // Fetch employee added events
                 const employeeAddedEvents = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
+                    address: CONTRACT_ADDRESS as `0x${string}`,
                     event: {
                         type: 'event',
                         name: 'EmployeeAdded',
@@ -117,7 +117,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
 
                 // Fetch employee removed events
                 const employeeRemovedEvents = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
+                    address: CONTRACT_ADDRESS as `0x${string}`,
                     event: {
                         type: 'event',
                         name: 'EmployeeRemoved',
@@ -135,7 +135,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
 
                 // Fetch salary updated events
                 const salaryUpdatedEvents = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
+                    address: CONTRACT_ADDRESS as `0x${string}`,
                     event: {
                         type: 'event',
                         name: 'SalaryUpdated',
@@ -154,7 +154,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
 
                 // Fetch bonus winner events
                 const bonusEvents = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
+                    address: CONTRACT_ADDRESS as `0x${string}`,
                     event: {
                         type: 'event',
                         name: 'BonusWinnerSelected',
@@ -357,7 +357,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
 
                 // Fetch payment events for this employee
                 const paymentEvents = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
+                    address: CONTRACT_ADDRESS as `0x${string}`,
                     event: {
                         type: 'event',
                         name: 'PaymentSent',
@@ -376,7 +376,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
 
                 // Fetch bonus winner events
                 const bonusEvents = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
+                    address: CONTRACT_ADDRESS as `0x${string}`,
                     event: {
                         type: 'event',
                         name: 'BonusWinnerSelected',
@@ -394,7 +394,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
 
                 // Fetch salary updated events
                 const salaryUpdatedEvents = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
+                    address: CONTRACT_ADDRESS as `0x${string}`,
                     event: {
                         type: 'event',
                         name: 'SalaryUpdated',

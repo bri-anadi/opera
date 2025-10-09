@@ -85,7 +85,7 @@ export default function EmployeesTable({
         isLoading: isLoadingCount,
     } = useReadContract({
         abi: CONTRACT_ABI,
-        address: contractAddress,
+        address: contractAddress as `0x${string}`,
         functionName: 'getEmployeeCountForEmployer',
         args: [employerAddress as `0x${string}`],
         query: {

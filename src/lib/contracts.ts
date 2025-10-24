@@ -1,7 +1,7 @@
 // src/lib/contracts.ts
 
 // Opera Contract Addresses (USDC Version)
-export const CONTRACT_ADDRESS_BASE_SEPOLIA = "0x4c4Dc6745d992d1614Fb19258F2d26BC26e90f93"; // TODO: Deploy new USDC contract
+export const CONTRACT_ADDRESS_BASE_SEPOLIA = "0x929b6074A4Fd5Bc4eEEB18522Bbc2eD6578dC564"; // TODO: Deploy new USDC contract
 export const CONTRACT_ADDRESS_BASE_MAINNET = "0xbf2DCB5Baa80b6A2029B3930f39B052bbbee8E57"; // TODO: Deploy new USDC contract
 
 // USDC Token Addresses on Base Network

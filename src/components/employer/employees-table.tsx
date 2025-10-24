@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatEther } from 'viem';
 import { useReadContract, useReadContracts } from 'wagmi';
 import { toast } from 'sonner';
+import { formatUsdc } from '@/lib/usdc-utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -240,7 +240,7 @@ export default function EmployeesTable({
     // Handle edit dialog
     const openEditDialog = (employee: Employee) => {
         setEditingEmployee(employee.walletAddress);
-        setNewSalary(formatEther(employee.salary));
+        setNewSalary(formatUsdc(employee.salary, 6));
         setEditDialogOpen(true);
     };
 
@@ -321,7 +321,7 @@ export default function EmployeesTable({
                             <TableRow>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Wallet Address</TableHead>
-                                <TableHead>Salary (ETH)</TableHead>
+                                <TableHead>Salary (USDC)</TableHead>
                                 <TableHead>Status</TableHead>
                                 {showActions && <TableHead className="text-right">Actions</TableHead>}
                             </TableRow>
@@ -344,7 +344,7 @@ export default function EmployeesTable({
                                         <TableCell className="font-mono text-xs">
                                             {employee.walletAddress.substring(0, 6)}...{employee.walletAddress.substring(employee.walletAddress.length - 4)}
                                         </TableCell>
-                                        <TableCell>{formatEther(employee.salary)}</TableCell>
+                                        <TableCell>{formatUsdc(employee.salary, 2)}</TableCell>
                                         <TableCell>
                                             {employee.active ? (
                                                 <div className="flex items-center gap-1">
@@ -410,7 +410,7 @@ export default function EmployeesTable({
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                        <Label htmlFor="new-salary">New Monthly Salary (ETH)</Label>
+                        <Label htmlFor="new-salary">New Monthly Salary (USDC)</Label>
                         <Input
                             id="new-salary"
                             type="number"

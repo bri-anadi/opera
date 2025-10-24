@@ -127,7 +127,7 @@ function AddEmployeeForm() {
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="salary">Monthly Salary (ETH)</Label>
+                            <Label htmlFor="salary">Monthly Salary (USDC)</Label>
                             <Input
                                 id="salary"
                                 type="number"
@@ -138,6 +138,9 @@ function AddEmployeeForm() {
                                 onChange={(e) => setSalary(e.target.value)}
                                 disabled={isPending || isConfirming}
                             />
+                            <p className="text-xs text-muted-foreground">
+                                Enter the monthly salary in USDC (e.g., 5000 for $5,000/month)
+                            </p>
                         </div>
                     </div>
                 </CardContent>

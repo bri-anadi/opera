@@ -1,7 +1,7 @@
 // src/hooks/use-transaction-history.tsx
 import { useState, useEffect } from 'react';
 import { useAccount, usePublicClient } from 'wagmi';
-import { formatEther } from 'viem';
+import { formatUsdc } from '@/lib/usdc-utils';
 import { useContractAddress } from './use-contract-address';
 
 // Transaction types
@@ -105,7 +105,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                             { type: 'address', name: 'employerAddress', indexed: true },
                             { type: 'address', name: 'employeeAddress', indexed: true },
                             { type: 'string', name: 'name', indexed: false },
-                            { type: 'uint256', name: 'salaryEth', indexed: false },
+                            { type: 'uint256', name: 'salaryUsdc', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -142,7 +142,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         inputs: [
                             { type: 'address', name: 'employerAddress', indexed: true },
                             { type: 'address', name: 'employeeAddress', indexed: true },
-                            { type: 'uint256', name: 'newSalaryEth', indexed: false },
+                            { type: 'uint256', name: 'newSalaryUsdc', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -201,7 +201,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         timestamp,
                         amount,
                         from: targetAddress as string,
-                        details: `Deposited ${formatEther(amount)} ETH`,
+                        details: `Deposited ${formatUsdc(amount, 2)} USDC`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -220,7 +220,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         amount,
                         from: targetAddress as string,
                         to: employeeAddress,
-                        details: `Paid ${formatEther(amount)} ETH to employee`,
+                        details: `Paid ${formatUsdc(amount, 2)} USDC to employee`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -230,7 +230,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                 for (const event of employeeAddedEvents) {
                     const name = event.args.name as string;
                     const employeeAddress = event.args.employeeAddress as string;
-                    const salary = event.args.salaryEth as bigint;
+                    const salary = event.args.salaryUsdc as bigint;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
                     allTransactions.push({
@@ -239,7 +239,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         timestamp,
                         from: targetAddress as string,
                         to: employeeAddress,
-                        details: `Added employee ${name} with salary ${formatEther(salary)} ETH`,
+                        details: `Added employee ${name} with salary ${formatUsdc(salary, 2)} USDC`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -265,7 +265,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                 // Process salary updated events
                 for (const event of salaryUpdatedEvents) {
                     const employeeAddress = event.args.employeeAddress as string;
-                    const newSalary = event.args.newSalaryEth as bigint;
+                    const newSalary = event.args.newSalaryUsdc as bigint;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
                     allTransactions.push({
@@ -274,7 +274,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         timestamp,
                         from: targetAddress as string,
                         to: employeeAddress,
-                        details: `Updated salary to ${formatEther(newSalary)} ETH`,
+                        details: `Updated salary to ${formatUsdc(newSalary, 2)} USDC`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -295,7 +295,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         timestamp,
                         amount,
                         to: winner,
-                        details: `Bonus of ${formatEther(amount)} ETH awarded`,
+                        details: `Bonus of ${formatUsdc(amount, 2)} USDC awarded`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -401,7 +401,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                         inputs: [
                             { type: 'address', name: 'employerAddress', indexed: true },
                             { type: 'address', name: 'employeeAddress', indexed: true },
-                            { type: 'uint256', name: 'newSalaryEth', indexed: false },
+                            { type: 'uint256', name: 'newSalaryUsdc', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -446,7 +446,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                         amount,
                         from: employerAddress,
                         to: targetAddress as string,
-                        details: `Received salary payment of ${formatEther(amount)} ETH`,
+                        details: `Received salary payment of ${formatUsdc(amount, 2)} USDC`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -463,7 +463,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                         timestamp,
                         amount,
                         to: targetAddress as string,
-                        details: `Received bonus of ${formatEther(amount)} ETH`,
+                        details: `Received bonus of ${formatUsdc(amount, 2)} USDC`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -472,7 +472,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                 // Process salary updated events
                 for (const event of salaryUpdatedEvents) {
                     const employerAddress = event.args.employerAddress as string;
-                    const newSalary = event.args.newSalaryEth as bigint;
+                    const newSalary = event.args.newSalaryUsdc as bigint;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
                     allTransactions.push({
@@ -481,7 +481,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                         timestamp,
                         from: employerAddress,
                         to: targetAddress as string,
-                        details: `Salary updated to ${formatEther(newSalary)} ETH`,
+                        details: `Salary updated to ${formatUsdc(newSalary, 2)} USDC`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });

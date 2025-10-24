@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { formatEther } from 'viem';
+import { formatUsdc } from '@/lib/usdc-utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useEmployeeDetails } from '@/hooks/use-opera-contract';
 import { useEmployeeTransactionHistory, TransactionType } from '@/hooks/use-transaction-history';
@@ -169,7 +169,7 @@ export default function EmployeeDashboard() {
                     <CardContent className="space-y-4">
                         <div>
                             <p className="text-sm text-muted-foreground">Monthly Salary</p>
-                            <p className="font-medium text-2xl">{formatEther(employee.salary)} ETH</p>
+                            <p className="font-medium text-2xl">{formatUsdc(employee.salary, 2)} USDC</p>
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Last Payment</p>
@@ -228,7 +228,7 @@ export default function EmployeeDashboard() {
                                             <TableCell>{new Date(tx.timestamp * 1000).toLocaleDateString()}</TableCell>
                                             <TableCell>
                                                 {tx.amount ? (
-                                                    <span className="font-medium">{formatEther(tx.amount)} ETH</span>
+                                                    <span className="font-medium">{formatUsdc(tx.amount, 2)} USDC</span>
                                                 ) : (
                                                     <span className="text-muted-foreground">-</span>
                                                 )}

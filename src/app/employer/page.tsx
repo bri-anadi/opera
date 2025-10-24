@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { formatEther } from 'viem';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { formatUsdc, parseUsdc } from '@/lib/usdc-utils';
 
 // Import our centralized hooks
 import {
@@ -16,6 +16,13 @@ import {
     useDepositFunds,
     usePayEmployees
 } from '@/hooks/use-opera-contract';
+
+// Import USDC hooks
+import {
+    useApproveUsdc,
+    useUsdcBalance,
+    useNeedsUsdcApproval
+} from '@/hooks/use-usdc';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -49,12 +56,19 @@ function EmployerDashboard() {
     const router = useRouter();
     const [depositAmount, setDepositAmount] = useState('');
     const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+    const [isApproving, setIsApproving] = useState(false);
 
     // Contract hooks
     const { employer, isLoading: isLoadingEmployer, refetch: refetchEmployer } = useEmployerDetails();
     const { count: employeeCount, isLoading: isLoadingEmployeeCount } = useEmployeeCount();
     const { balance, isLoading: isLoadingBalance, refetch: refetchBalance } = useEmployerBalance();
     const { totalSalary, isLoading: isLoadingTotalSalary } = useTotalMonthlySalary();
+
+    // USDC hooks
+    const { balance: usdcBalance } = useUsdcBalance();
+    const { approve, isPending: isApprovePending, isConfirmed: isApproveConfirmed } = useApproveUsdc();
+    const depositAmountBigInt = depositAmount ? parseUsdc(depositAmount) : BigInt(0);
+    const { needsApproval } = useNeedsUsdcApproval(depositAmountBigInt);
 
     // Transaction hooks
     const {
@@ -74,12 +88,22 @@ function EmployerDashboard() {
     // Calculate months of runway
     const monthsOfRunway = totalSalary ? Number(balance) / Number(totalSalary) : 0;
 
+    // Handle approval confirmation - auto proceed to deposit
+    useEffect(() => {
+        if (isApproveConfirmed && isApproving) {
+            setIsApproving(false);
+            toast.success('USDC approved! Now depositing...');
+            deposit(depositAmount);
+        }
+    }, [isApproveConfirmed, isApproving, deposit, depositAmount]);
+
     // Handle deposit transaction results
     useEffect(() => {
         if (isDepositConfirmed) {
             toast.success('Funds deposited successfully');
             setDepositDialogOpen(false);
             setDepositAmount('');
+            setIsApproving(false);
             refetchBalance();
             refetchEmployer();
         }
@@ -93,7 +117,7 @@ function EmployerDashboard() {
         }
     }, [isPaymentConfirmed, refetchBalance]);
 
-    // Handle deposit
+    // Handle deposit with USDC approval flow
     const handleDeposit = async () => {
         try {
             if (!depositAmount || parseFloat(depositAmount) <= 0) {
@@ -101,6 +125,22 @@ function EmployerDashboard() {
                 return;
             }
 
+            // Check USDC balance
+            if (usdcBalance < depositAmountBigInt) {
+                toast.error(`Insufficient USDC. You have ${formatUsdc(usdcBalance, 2)} USDC`);
+                return;
+            }
+
+            // Step 1: Approve USDC if needed
+            if (needsApproval) {
+                setIsApproving(true);
+                toast.info('Step 1/2: Approving USDC...');
+                await approve(depositAmountBigInt);
+                return; // Will auto-proceed after approval via useEffect
+            }
+
+            // Step 2: Deposit (if already approved)
+            toast.info('Depositing funds...');
             await deposit(depositAmount);
         } catch (error) {
             console.error('Deposit error:', error);
@@ -149,7 +189,7 @@ function EmployerDashboard() {
                                 {isLoadingBalance ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                    `${formatEther(balance)} ETH`
+                                    `${formatUsdc(balance, 2)} USDC`
                                 )}
                             </div>
                         </div>
@@ -182,7 +222,7 @@ function EmployerDashboard() {
                                 {isLoadingTotalSalary ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                    `${formatEther(totalSalary)} ETH`
+                                    `${formatUsdc(totalSalary, 2)} USDC`
                                 )}
                             </div>
                         </div>
@@ -316,7 +356,7 @@ function EmployerDashboard() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                        <Label htmlFor="deposit-amount">Amount (ETH)</Label>
+                        <Label htmlFor="deposit-amount">Amount (USDC)</Label>
                         <Input
                             id="deposit-amount"
                             type="number"
@@ -327,19 +367,36 @@ function EmployerDashboard() {
                             onChange={(e) => setDepositAmount(e.target.value)}
                             className="mt-2"
                         />
+                        <div className="mt-2 space-y-1">
+                            <p className="text-xs text-muted-foreground">
+                                Your USDC Balance: {formatUsdc(usdcBalance, 2)} USDC
+                            </p>
+                            {depositAmount && needsApproval && (
+                                <p className="text-xs text-amber-600">
+                                    You'll need to approve USDC spending first
+                                </p>
+                            )}
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button
                             onClick={handleDeposit}
-                            disabled={isDepositPending || isDepositConfirming || !depositAmount}
+                            disabled={isApprovePending || isDepositPending || isDepositConfirming || !depositAmount}
                         >
-                            {isDepositPending || isDepositConfirming ? (
+                            {isApprovePending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Approving USDC...
+                                </>
+                            ) : isDepositPending || isDepositConfirming ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Depositing...
                                 </>
+                            ) : needsApproval ? (
+                                'Approve & Deposit'
                             ) : (
-                                'Deposit'
+                                'Deposit Funds'
                             )}
                         </Button>
                     </DialogFooter>

@@ -1,9 +1,9 @@
 // src/hooks/use-opera-contract.tsx
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { parseEther } from 'viem';
 import { CONTRACT_ABI } from '@/lib/contracts';
 import { useState, useEffect, useMemo } from 'react';
 import { useContractAddress } from './use-contract-address';
+import { parseUsdc } from '@/lib/usdc-utils';
 
 // Types for Employee and Employer data structures
 export type Employee = {
@@ -209,6 +209,7 @@ export function useTotalMonthlySalary(employerAddress?: string) {
 
 /**
  * Hook to register as an employer
+ * NOTE: Requires USDC approval first! Use useApproveUsdc before calling this.
  */
 export function useRegisterAsEmployer() {
     const { writeContract, isPending, error, data: hash } = useWriteContract();
@@ -216,13 +217,16 @@ export function useRegisterAsEmployer() {
         hash
     });
     const CONTRACT_ADDRESS = useContractAddress();
-    const register = async (name: string, fee: string = '0.01') => {
+
+    // Register function now takes USDC amount instead of ETH
+    // Default registration fee is 10 USDC
+    const register = async (name: string) => {
         writeContract({
             abi: CONTRACT_ABI,
             address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'registerAsEmployer',
             args: [name],
-            value: parseEther(fee),
+            // No value field - USDC is transferred via approval
         });
     };
 
@@ -238,6 +242,7 @@ export function useRegisterAsEmployer() {
 
 /**
  * Hook to deposit funds to the employer's account
+ * NOTE: Requires USDC approval first! Use useApproveUsdc before calling this.
  */
 export function useDepositFunds() {
     const { writeContract, isPending, error, data: hash } = useWriteContract();
@@ -245,12 +250,16 @@ export function useDepositFunds() {
         hash
     });
     const CONTRACT_ADDRESS = useContractAddress();
+
+    // Deposit function now takes USDC amount (with 6 decimals)
     const deposit = async (amount: string) => {
+        const usdcAmount = parseUsdc(amount);
         writeContract({
             abi: CONTRACT_ABI,
             address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'depositFunds',
-            value: parseEther(amount),
+            args: [usdcAmount],
+            // No value field - USDC is transferred via approval
         });
     };
 
@@ -273,12 +282,15 @@ export function useAddEmployee() {
         hash
     });
     const CONTRACT_ADDRESS = useContractAddress();
-    const addEmployee = async (walletAddress: string, name: string, salaryEth: string) => {
+
+    // Add employee function now takes USDC salary (with 6 decimals)
+    const addEmployee = async (walletAddress: string, name: string, salaryUsdc: string) => {
+        const usdcSalary = parseUsdc(salaryUsdc);
         writeContract({
             abi: CONTRACT_ABI,
             address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'addEmployee',
-            args: [walletAddress as `0x${string}`, name, parseEther(salaryEth)],
+            args: [walletAddress as `0x${string}`, name, usdcSalary],
         });
     };
 
@@ -329,12 +341,15 @@ export function useUpdateSalary() {
         hash
     });
     const CONTRACT_ADDRESS = useContractAddress();
-    const updateSalary = async (employeeAddress: string, newSalaryEth: string) => {
+
+    // Update salary function now takes USDC amount (with 6 decimals)
+    const updateSalary = async (employeeAddress: string, newSalaryUsdc: string) => {
+        const usdcSalary = parseUsdc(newSalaryUsdc);
         writeContract({
             abi: CONTRACT_ABI,
             address: CONTRACT_ADDRESS as `0x${string}`,
             functionName: 'updateSalary',
-            args: [employeeAddress as `0x${string}`, parseEther(newSalaryEth)],
+            args: [employeeAddress as `0x${string}`, usdcSalary],
         });
     };
 

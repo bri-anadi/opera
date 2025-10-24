@@ -121,7 +121,8 @@ function RegisterEmployerForm() {
                         <div className="space-y-2">
                             <Label>Registration Fee</Label>
                             <div className="p-2 border rounded-md bg-muted/50">
-                                <p className="text-sm text-muted-foreground">A one-time registration fee of 0.01 ETH is required</p>
+                                <p className="text-sm text-muted-foreground">A one-time registration fee of 10 USDC is required</p>
+                                <p className="text-xs text-muted-foreground mt-1">You'll need to approve USDC spending first</p>
                             </div>
                         </div>
                         <div className="space-y-2">

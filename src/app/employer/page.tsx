@@ -373,7 +373,7 @@ function EmployerDashboard() {
                             </p>
                             {depositAmount && needsApproval && (
                                 <p className="text-xs text-amber-600">
-                                    You'll need to approve USDC spending first
+                                    You&apos;ll need to approve USDC spending first
                                 </p>
                             )}
                         </div>

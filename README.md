@@ -1,10 +1,6 @@
 # Opera - Open Payroll Raising Automatically
 
-Opera is a decentralized payroll system built on blockchain technology that automates salary payments, increases transparency, and eliminates traditional banking limitations through smart contract automation.
-
-## Chainlink Integration
-
-This project leverages multiple Chainlink services to enable core functionality:
+Opera is a decentralized payroll system built on blockchain technology that manages salary payments with USDC stablecoin, increases transparency, and eliminates traditional banking limitations through smart contracts on the Base network.
 
 ```mermaid
 erDiagram
@@ -31,94 +27,29 @@ erDiagram
         bool bonusLotteryEnabled
         address lastBonusWinner
         uint256 employerRegistrationFee
+        IERC20 usdcToken
     }
 
+    USDC_TOKEN ||--|| SYSTEM : payment_currency
     SYSTEM ||--o{ EMPLOYER : manages
     SYSTEM ||--o{ EMPLOYEE : pays
-
-    CHAINLINK_AUTOMATION ||--|| SYSTEM : triggers_payments
-    CHAINLINK_VRF ||--|| SYSTEM : provides_randomness
 ```
 
-### Chainlink Automation
+## Key Features
 
-Opera uses Chainlink Automation (formerly Keepers) to enable fully automated payroll execution. The system automatically checks if payments are due and processes them without requiring manual intervention.
+### USDC Stablecoin Payments
 
-The implementation uses a time-based trigger pattern where:
-1. `checkUpkeep` evaluates employee payment conditions (active status, time since last payment, sufficient employer balance)
-2. `performUpkeep` executes the payment cycle when conditions are met, processing all eligible payments in a single transaction
+Opera uses USDC (USD Coin) as the primary payment currency, providing:
+- **Price Stability**: Employees receive predictable value pegged to USD
+- **Fast Transactions**: Leverages Base network for quick, low-cost transfers
+- **Wide Acceptance**: USDC is widely supported and easily convertible
+- **Transparency**: All transactions are on-chain and verifiable
 
-**Files implementing Chainlink Automation:**
-- [OperaContract.sol](./OperaContract.sol) - lines 449-470: `checkUpkeep` and `performUpkeep` functions
-
-```solidity
-function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool upkeepNeeded, bytes memory /* performData */) {
-    upkeepNeeded = false;
-
-    for (uint256 i = 0; i < employeeAddresses.length; i++) {
-        address employeeAddress = employeeAddresses[i];
-        Employee storage employee = employees[employeeAddress];
-
-        if (employee.active &&
-            block.timestamp >= employee.lastPayment + PAYMENT_INTERVAL &&
-            employers[employee.employer].balance >= employee.salary) {
-            upkeepNeeded = true;
-            break;
-        }
-    }
-
-    return (upkeepNeeded, "");
-}
-
-function performUpkeep(bytes calldata /* performData */) external override {
-    _payAllEmployees();
-}
-```
-
-### Chainlink VRF (Verifiable Random Function)
-
-Opera implements a bonus lottery system powered by Chainlink VRF, ensuring that bonus recipient selection is provably fair and cannot be manipulated by any party, including the contract creators.
-
-The implementation follows a complete request-receive pattern:
-1. `_requestRandomness` initiates a VRF request after the payroll cycle completes
-2. `fulfillRandomWords` processes the random value to select a bonus winner from active employees
-3. The selected employee receives an immediate bonus payment
-
-**Files implementing Chainlink VRF:**
-- [OperaContract.sol](./OperaContract.sol) - lines 472-538: `_requestRandomness` and `fulfillRandomWords` functions
-
-```solidity
-function _requestRandomness() internal {
-    require(address(this).balance >= bonusAmount, "Insufficient balance for bonus");
-
-    uint256 activeEmployees = 0;
-    for (uint256 i = 0; i < employeeAddresses.length; i++) {
-        if (employees[employeeAddresses[i]].active) {
-            activeEmployees++;
-        }
-    }
-    require(activeEmployees > 0, "No active employees");
-
-    lastRequestId = COORDINATOR.requestRandomWords(
-        s_keyHash,
-        uint64(s_subscriptionId),
-        REQUEST_CONFIRMATIONS,
-        CALLBACK_GAS_LIMIT,
-        NUM_WORDS
-    );
-
-    emit RandomnessRequested(lastRequestId);
-}
-
-function fulfillRandomWords(
-    uint256,
-    uint256[] memory _randomWords
-) internal override {
-    // Random winner selection logic...
-    uint256 winnerIndex = _randomWords[0] % activeEmployeesCount;
-    // Winner payment logic...
-}
-```
+The smart contract ([OperaContractUSDC.sol](./OperaContractUSDC.sol)) handles:
+1. USDC deposits from employers to contract balance
+2. Salary payments in USDC to employees
+3. Registration fees in USDC
+4. Bonus lottery system in USDC (when enabled)
 
 ## Project Description
 
@@ -127,15 +58,14 @@ Opera (Open Payroll Raising Automatically) is a blockchain-based payroll system 
 ```mermaid
 graph TB
     subgraph "Frontend Layer"
-        UI[User Interface]
-        Hooks[Custom Hooks]
-        Providers[Context Providers]
+        UI[User Interface - Next.js]
+        Hooks[Custom Hooks - wagmi]
+        Providers[Web3 Providers - Reown AppKit]
     end
 
-    subgraph "Blockchain Layer"
-        SC[Opera Smart Contract]
-        CLA[Chainlink Automation]
-        CLVRF[Chainlink VRF]
+    subgraph "Blockchain Layer - Base Network"
+        SC[Opera Smart Contract USDC]
+        USDC[USDC Token Contract]
     end
 
     subgraph "User Types"
@@ -153,16 +83,14 @@ graph TB
     Hooks <--> Providers
     Providers <--> SC
 
-    SC -- "Triggers Upkeep Check" --> CLA
-    CLA -- "Executes Payments" --> SC
-
-    SC -- "Requests Randomness" --> CLVRF
-    CLVRF -- "Provides Verifiable Random Number" --> SC
+    SC <--> USDC
+    SC -- "Transfers USDC" --> Employee
+    Employer -- "Deposits USDC" --> SC
 
     SC -- "Emits Events" --> Hooks
 
     class UI,Hooks,Providers frontend;
-    class SC,CLA,CLVRF blockchain;
+    class SC,USDC blockchain;
     class Employer,Employee users;
 ```
 
@@ -182,19 +110,19 @@ Opera addresses these challenges by leveraging blockchain technology and smart c
 
 #### For Employers
 
-- **Streamlined Registration**: Employers register on-chain with a simple transaction, establishing their company profile with minimal overhead
+- **Streamlined Registration**: Employers register on-chain by paying a registration fee in USDC, establishing their company profile with minimal overhead
 - **Comprehensive Employee Management**: Add, update, or remove employees with complete record-keeping of all changes
-- **Secure Fund Management**: Deposit and manage payroll funds with segregated balances and role-based access controls
-- **Automated Payments**: Scheduled payments execute automatically every 30 days without manual intervention, leveraging Chainlink Automation
-- **Bonus Incentives**: Distribute random bonuses using Chainlink VRF for verifiably fair recipient selection
-- **Financial Analytics**: Track payment history, fund utilization, and payroll projections
+- **Secure Fund Management**: Deposit and manage USDC payroll funds with segregated balances and role-based access controls
+- **Manual Payment Execution**: Trigger payments to all employees with a single transaction call (`payMyEmployees`)
+- **Bonus Lottery System**: Optionally run manual bonus lottery to reward random employees (owner-controlled feature)
+- **Financial Analytics**: Track payment history, USDC fund utilization, and payroll projections
 
 #### For Employees
 
 - **Digital Employment Records**: Maintain cryptographically secured proof of employment with immutable compensation terms
-- **Payment Transparency**: Gain complete visibility into payment schedules, amounts, and history
-- **Automatic Compensation**: Receive payments directly to personal wallet without claiming or manual processing
-- **Bonus Eligibility**: Participate in randomized bonus distributions with equal opportunity
+- **Payment Transparency**: Gain complete visibility into payment schedules, USDC amounts, and history
+- **Direct USDC Payments**: Receive USDC payments directly to personal wallet when employer triggers payroll
+- **Bonus Eligibility**: Potential to receive random bonus payments in USDC (when lottery is enabled)
 - **Financial Visibility**: Access personal payment analytics and history with blockchain verification
 
 ### Technical Stack
@@ -202,27 +130,33 @@ Opera addresses these challenges by leveraging blockchain technology and smart c
 #### Smart Contract Infrastructure
 
 - **Solidity 0.8.19**: Latest stable version with enhanced type safety and gas optimizations
-- **Chainlink Automation**: Decentralized, reliable service for triggering time-based payment execution
-- **Chainlink VRF**: Verifiable random function providing cryptographically guaranteed randomness for the bonus lottery
-- **OpenZeppelin Libraries**: Production-tested implementation of access control (Ownable), security patterns (ReentrancyGuard), and other essential contract functionality
-- **EVM Compatibility**: Designed for deployment on any Ethereum Virtual Machine compatible network
+- **USDC Integration**: ERC-20 stablecoin integration using SafeERC20 for secure token transfers
+- **Base Network**: Deployed on Base Mainnet and Base Sepolia testnet for low-cost, fast transactions
+- **OpenZeppelin Libraries**: Production-tested implementation of:
+  - Access control (Ownable)
+  - Security patterns (ReentrancyGuard)
+  - Safe ERC-20 token handling (SafeERC20)
+- **EVM Compatibility**: Works on any Ethereum Virtual Machine compatible network supporting USDC
 
 #### Frontend Technology
 
-- **Next.js 15**: Server-side rendering and modern React features for optimal performance
+- **Next.js 15.3.4**: Server-side rendering and modern React features for optimal performance
 - **React 19**: Latest React version with enhanced rendering capabilities
-- **TypeScript**: Static typing throughout the codebase for improved reliability
-- **wagmi**: React hooks for Ethereum interaction with automatic state management
-- **shadcn/ui**: Accessible, customizable component library for consistent UI/UX
-- **TailwindCSS**: Utility-first CSS framework for responsive, maintainable styling
-- **date-fns**: Comprehensive datetime handling for payment schedules and countdown timers
+- **TypeScript 5**: Static typing throughout the codebase for improved reliability
+- **wagmi 2.15+**: React hooks for Ethereum interaction with automatic state management
+- **Reown AppKit (formerly WalletConnect)**: Multi-wallet connection support
+- **@tanstack/react-query**: Powerful data fetching and caching
+- **shadcn/ui + Radix UI**: Accessible, customizable component library for consistent UI/UX
+- **TailwindCSS 4**: Utility-first CSS framework for responsive, maintainable styling
+- **date-fns 4**: Comprehensive datetime handling for payment schedules and countdown timers
+- **Motion (Framer Motion)**: Smooth animations and transitions
 
 #### Authentication and Data Management
 
-- **Web3 Wallet Authentication**: Non-custodial authentication using cryptocurrency wallets (MetaMask, WalletConnect, etc.)
-- **On-Chain Data Storage**: Critical business logic and financial records stored immutably on blockchain
-- **Client-Side Data Processing**: Efficient handling of blockchain data with local caching and state management
-- **Decentralized Service Integration**: Direct integration with Chainlink services for automation and randomness
+- **Web3 Wallet Authentication**: Non-custodial authentication using Reown AppKit supporting MetaMask, WalletConnect, and other wallets
+- **On-Chain Data Storage**: Critical business logic and financial records stored immutably on Base blockchain
+- **Client-Side Data Processing**: Efficient handling of blockchain data with react-query caching and state management
+- **USDC Token Management**: Approve and transfer USDC tokens via standard ERC-20 interface
 
 ## Architecture Overview
 
@@ -233,98 +167,111 @@ Opera follows a decentralized architecture with three main components:
 The smart contract serves as the system's core, containing all business logic, access controls, and data storage. Key architectural elements include:
 
 - **Data Structures**:
-  - `Employer` struct: Contains employer details, balance, and status
-  - `Employee` struct: Stores employee information, salary, payment history, and status
+  - `Employer` struct: Contains employer details, USDC balance, and status
+  - `Employee` struct: Stores employee information, USDC salary, payment history, and status
   - Mappings and arrays for efficient data access and enumeration
 
 - **Access Control System**:
-  - Owner-level administrative functions for system management
-  - Employer-specific permissions for workforce and fund management
-  - Automated functions accessible by Chainlink Automation
+  - Owner-level administrative functions for system management (bonus lottery, registration fees)
+  - Employer-specific permissions for workforce and fund management (onlyEmployer modifier)
+  - Employee management restricted to the employing organization
 
-- **Fund Management**:
-  - Segregated employer balances to prevent cross-contamination
-  - Safe withdrawal patterns for payment processing
+- **USDC Fund Management**:
+  - Segregated employer USDC balances to prevent cross-contamination
+  - SafeERC20 for secure token transfers
   - ReentrancyGuard protection against recursive attack vectors
+  - Approval mechanism for USDC deposits and payments
 
 - **Event System**:
   - Comprehensive event emissions for all state changes
   - Indexed parameters for efficient off-chain filtering and monitoring
+  - Events for payments, registrations, employee management, and fund deposits
 
 ### 2. Web Interface Layer
 
 The frontend provides intuitive access to contract functionality through purpose-built dashboards:
 
 - **Authentication Flow**:
-  - Web3 wallet connection for secure, non-custodial authentication
+  - Web3 wallet connection via Reown AppKit for secure, non-custodial authentication
   - Role detection for dynamic UI rendering (employer vs. employee)
-  - Network verification to ensure correct blockchain connection
+  - Network verification to ensure connection to Base Mainnet or Base Sepolia
+  - Protected routes for employer-only and employee-only pages
 
 - **State Management**:
-  - Custom React hooks for blockchain data fetching and caching
-  - Optimistic UI updates for improved responsiveness
-  - Real-time data synchronization with blockchain state
+  - Custom wagmi hooks for blockchain data fetching and caching
+  - React Query for optimized data synchronization
+  - Real-time updates on transactions and contract state changes
+  - USDC balance and allowance tracking
 
 - **Interface Components**:
-  - Employer dashboard for workforce and fund management
-  - Employee dashboard for payment tracking and verification
-  - Transaction confirmation and status monitoring
-  - Financial analytics and reporting tools
+  - Employer dashboard for workforce and USDC fund management
+  - Employee dashboard for payment tracking and salary verification
+  - USDC approval and deposit flows with transaction monitoring
+  - Transaction history with Base blockchain explorer links
+  - Financial analytics showing USDC balances and payment projections
 
 ### 3. Blockchain Network Layer
 
 The blockchain provides the settlement layer and source of truth:
 
 - **Transaction Processing**:
-  - Employer-initiated transactions (registration, employee management, deposits)
-  - Automated transactions via Chainlink (regular payments, bonus distribution)
-  - Gas optimization strategies for cost efficiency
+  - Employer-initiated transactions (registration with USDC fee, employee management, USDC deposits)
+  - Manual payment execution by employers (`payMyEmployees` function)
+  - USDC token approvals and transfers
+  - Gas-optimized for Base network's low transaction costs
 
 - **Data Persistence**:
-  - Immutable record of all system activities
+  - Immutable record of all system activities on Base blockchain
   - Transparent, verifiable state accessible to all participants
   - Historical data for compliance and audit purposes
+  - All USDC transactions traceable on-chain
 
 ### Security Considerations
 
 The system incorporates multiple security mechanisms:
 
 - **Smart Contract Security**:
-  - Comprehensive access controls with function modifiers
-  - Reentrancy protection for all fund transfers
+  - Comprehensive access controls with onlyOwner and onlyEmployer modifiers
+  - ReentrancyGuard protection for all USDC transfers
   - Input validation and error handling throughout
-  - Use of well-audited OpenZeppelin components
+  - Use of well-audited OpenZeppelin components (Ownable, ReentrancyGuard, SafeERC20)
+  - SafeERC20 prevents common ERC-20 vulnerabilities
 
 - **Economic Security**:
-  - Fund segregation to prevent unauthorized access
+  - Segregated USDC balances per employer to prevent cross-contamination
   - Balance verification before payment execution
-  - Efficient payment batching to reduce transaction costs
+  - Registration fee in USDC to prevent spam registrations
+  - Emergency withdraw function for owner (contract recovery)
 
 - **Operational Security**:
-  - Chainlink VRF for tamper-proof randomness
-  - Decentralized automation for trustless execution
-  - Event logging for all critical state changes
+  - Event logging for all critical state changes and USDC transfers
+  - Two-step USDC transfer (approve + depositFunds) for user awareness
+  - Employee payment tracking to prevent duplicate payments within interval
+  - Role-based access control for all sensitive operations
 
 ## Smart Contract Details
 
 ### Contract Structure
 
-The `OperaContract.sol` file implements the entire system with the following key components:
+The [OperaContractUSDC.sol](./OperaContractUSDC.sol) file implements the entire USDC-based payroll system with the following key components:
 
 #### Core Data Structures
 
 ```solidity
+// USDC token interface
+IERC20 public immutable usdcToken;
+
 struct Employer {
     string name;
-    uint256 balance;
+    uint256 balance;  // Balance in USDC (6 decimals)
     bool active;
     uint256 registrationTime;
 }
 
 struct Employee {
-    address payable walletAddress;
+    address walletAddress;
     string name;
-    uint256 salary;
+    uint256 salary;  // Salary in USDC (6 decimals)
     uint256 lastPayment;
     bool active;
     address employer;
@@ -341,39 +288,42 @@ address[] public employeeAddresses;
 
 ```solidity
 uint256 public constant PAYMENT_INTERVAL = 30 days;
-uint256 public bonusAmount = 0.1 ether;
+uint256 public bonusAmount = 100 * 10**6;  // 100 USDC (6 decimals)
 bool public bonusLotteryEnabled = true;
 address public lastBonusWinner;
-uint256 public employerRegistrationFee = 0.01 ether;
+uint256 public employerRegistrationFee = 10 * 10**6;  // 10 USDC (6 decimals)
 ```
 
 #### Major Function Groups
 
 1. **Employer Management**:
-   - `registerAsEmployer`: Allows new employers to register with a fee
-   - `depositFunds`: Adds funds to employer balance for payroll
-   - `setEmployerStatus`: Administrative function to activate/deactivate employers
+   - `registerAsEmployer(string _name)`: Register as employer by transferring USDC registration fee
+   - `depositFunds(uint256 _amount)`: Deposit USDC to employer balance (requires prior USDC approval)
+   - `setEmployerStatus(address, bool)`: Owner function to activate/deactivate employers
+   - `setEmployerRegistrationFee(uint256)`: Owner function to update registration fee
 
 2. **Employee Management**:
-   - `addEmployee`: Registers a new employee with salary information
-   - `removeEmployee`: Deactivates an employee and removes from active lists
-   - `updateSalary`: Modifies an employee's compensation amount
+   - `addEmployee(address, string, uint256)`: Add new employee with USDC salary amount
+   - `removeEmployee(address)`: Deactivate employee and remove from lists
+   - `updateSalary(address, uint256)`: Update employee's USDC salary
 
 3. **Payment Processing**:
-   - `payEmployee`: Internal function to process individual payments
-   - `payMyEmployees`: Employer-triggered function to pay their workforce
-   - `payAllEmployees`: System-level function for all eligible payments
-   - `checkUpkeep` & `performUpkeep`: Chainlink Automation integration
+   - `_payEmployee(address)`: Internal function to transfer USDC to employee
+   - `payMyEmployees()`: Employer-triggered function to pay all their employees
+   - `payAllEmployees()`: Owner function to trigger payments for all employers (if enabled)
 
-4. **Bonus System**:
-   - `_requestRandomness`: Initiates Chainlink VRF request
-   - `fulfillRandomWords`: Processes random result and distributes bonus
-   - `setBonusAmount`: Configures bonus payment size
-   - `toggleBonusLottery`: Enables/disables the bonus feature
+4. **Bonus System** (Owner-controlled):
+   - `runBonusLotteryManually()`: Manually trigger bonus lottery using pseudo-random selection
+   - `setBonusAmount(uint256)`: Configure USDC bonus amount
+   - `toggleBonusLottery(bool)`: Enable/disable the bonus feature
 
 5. **View Functions**:
-   - Various getter functions for balances, counts, and system information
-   - Utility functions for calculating totals and retrieving statistics
+   - `getEmployerBalance(address)`: Get employer's USDC balance
+   - `getEmployeeCountForEmployer(address)`: Count employees for an employer
+   - `getTotalMonthlySalaryForEmployer(address)`: Calculate total monthly USDC payroll
+   - `getContractBalance()`: Get total USDC held by contract
+   - `getUsdcAddress()`: Get USDC token contract address
+   - Various counters and getters for system information
 
 ### Contract Events
 
@@ -382,16 +332,15 @@ The contract emits events for all significant state changes:
 ```solidity
 event EmployerRegistered(address indexed employerAddress, string name);
 event EmployerDeactivated(address indexed employerAddress);
-event EmployerFundsDeposited(address indexed employerAddress, uint256 amount);
-event EmployeeAdded(address indexed employerAddress, address indexed employeeAddress, string name, uint256 salaryEth);
+event EmployerFundsDeposited(address indexed employerAddress, uint256 amount);  // amount in USDC
+event EmployeeAdded(address indexed employerAddress, address indexed employeeAddress, string name, uint256 salaryUsdc);
 event EmployeeRemoved(address indexed employerAddress, address indexed employeeAddress);
-event SalaryUpdated(address indexed employerAddress, address indexed employeeAddress, uint256 newSalaryEth);
-event PaymentSent(address indexed employerAddress, address indexed employeeAddress, uint256 amount);
-event BonusWinnerSelected(address indexed winner, uint256 amount);
-event RandomnessRequested(uint256 requestId);
-event BonusAmountUpdated(uint256 newAmount);
+event SalaryUpdated(address indexed employerAddress, address indexed employeeAddress, uint256 newSalaryUsdc);
+event PaymentSent(address indexed employerAddress, address indexed employeeAddress, uint256 amount);  // amount in USDC
+event BonusWinnerSelected(address indexed winner, uint256 amount);  // amount in USDC
+event BonusAmountUpdated(uint256 newAmount);  // amount in USDC
 event BonusLotteryToggled(bool enabled);
-event EmployerRegistrationFeeUpdated(uint256 newFee);
+event EmployerRegistrationFeeUpdated(uint256 newFee);  // fee in USDC
 ```
 
 ## Frontend Implementation Details
@@ -403,37 +352,59 @@ The frontend architecture is built around reusable hooks and components:
 #### Contract Interaction Hooks
 
 ```typescript
-// src/hooks/use-opera-contract.tsx
+// src/hooks/use-opera-contract.tsx - Main contract interactions
+export function useEmployerDetails(employerAddress?: string)  // Get employer info
+export function useEmployeeCount(employerAddress?: string)    // Count employees
+export function useEmployerBalance(employerAddress?: string)  // Get USDC balance
+export function useTotalMonthlySalary(employerAddress?: string) // Calculate total payroll
+export function useRegisterAsEmployer()  // Register with USDC fee
+export function useDepositFunds()        // Deposit USDC (requires approval)
+export function useAddEmployee()         // Add new employee
+export function usePayEmployees()        // Trigger payroll
+export function useEmployeeDetails(employeeAddress: string)  // Get employee info
+export function useIsEmployer()          // Check if address is employer
+export function useUpdateSalary()        // Update employee salary
+export function useRemoveEmployee()      // Remove employee
 
-// Employer hooks
-export function useEmployerDetails(employerAddress?: string) {...}
-export function useEmployeeCount(employerAddress?: string) {...}
-export function useEmployerBalance(employerAddress?: string) {...}
-export function useTotalMonthlySalary(employerAddress?: string) {...}
-export function useRegisterAsEmployer() {...}
-export function useDepositFunds() {...}
-export function useAddEmployee() {...}
-export function usePayEmployees() {...}
+// src/hooks/use-usdc.tsx - USDC token interactions
+export function useUsdcBalance()         // Get user's USDC balance
+export function useUsdcAllowance()       // Check USDC allowance for contract
+export function useApproveUsdc()         // Approve USDC spending
 
-// Employee hooks
-export function useEmployeeDetails(employeeAddress: string) {...}
-export function useIsEmployer() {...}
-export function useUpdateSalary() {...}
-export function useRemoveEmployee() {...}
+// src/hooks/use-contract-address.tsx - Network-aware contract address
+export function useContractAddress()     // Get contract address for current network
+
+// src/hooks/use-usdc-address.tsx - Network-aware USDC address
+export function useUsdcAddress()         // Get USDC address for current network
 ```
 
 #### Key UI Components
 
 ```typescript
 // Employer components
-<EmployeesTable employerAddress={address} />
-<TransactionHistory employerAddress={address} />
-<DepositFundsDialog open={open} onOpenChange={setOpen} />
+<EmployeesTable employerAddress={address} />      // Display employees with USDC salaries
+<TransactionHistory employerAddress={address} />  // Show payment history
+// USDC deposit flow handled inline with approve + deposit
 
 // Employee components
-<EmployeeDashboard />
-<PaymentHistoryTable employeeAddress={address} />
-<SalaryInfoCard employee={employee} />
+<EmployeeDashboard />                             // Employee overview with salary info
+// Payment tracking shown in dashboard
+
+// Layout components
+<Navbar />                                        // Navigation with wallet connect
+<Footer />                                        // Site footer
+<ConnectButton />                                 // Reown AppKit wallet connection
+```
+
+#### Page Structure
+
+```typescript
+// src/app/page.tsx                     - Landing page
+// src/app/register/page.tsx            - Employer registration
+// src/app/employer/page.tsx            - Employer dashboard
+// src/app/employer/employees/page.tsx  - Employee management
+// src/app/employer/employees/add/page.tsx - Add employee form
+// src/app/employee/page.tsx            - Employee dashboard
 ```
 
 #### Authentication and Protection
@@ -446,12 +417,9 @@ export default function ProtectedRoute({
     requireNotEmployer = false,
     redirectTo = '/'
 }: ProtectedRouteProps) {
-    const router = useRouter()
     const { isConnected } = useAccount()
     const { isEmployer, isLoading } = useIsEmployer()
-
-    // Logic to protect routes based on authentication state
-    // ...
+    // Redirects based on wallet connection and employer status
 }
 ```
 
@@ -460,11 +428,10 @@ export default function ProtectedRoute({
 ### Prerequisites
 
 - Node.js 18+ (recommended Node.js 20 LTS)
-- pnpm package manager (v8.10.0+)
-- MetaMask or another Ethereum wallet
-- Chain (Base Mainnet or Base Sepolia)
-- Chainlink VRF Subscription
-- Chainlink Automation Registration
+- npm, pnpm, or yarn package manager
+- Web3 wallet (MetaMask, Coinbase Wallet, or any WalletConnect-compatible wallet)
+- Access to Base Mainnet or Base Sepolia testnet
+- USDC tokens for testing (on testnet) or production use (on mainnet)
 
 ### Installation
 
@@ -480,12 +447,14 @@ pnpm install
 ```
 
 3. Create a `.env.local` file with required environment variables
+```env
+NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
+NEXT_PUBLIC_REOWN_PROJECT_ID=your_reown_project_id
 ```
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_key
-NEXT_PUBLIC_REOWN_PROJECT_ID=your_project_id
-NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL=https://base-sepolia.g.alchemy.com/v2/your_key
-NEXT_PUBLIC_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your_key
-```
+
+Get your keys:
+- **Alchemy API Key**: Sign up at [https://www.alchemy.com/](https://www.alchemy.com/) and create a new app for Base network
+- **Reown Project ID**: Visit [https://cloud.reown.com](https://cloud.reown.com) (formerly WalletConnect) to create a project
 
 4. Start the development server
 ```bash
@@ -497,83 +466,82 @@ Open your browser and navigate to `http://localhost:3000`
 
 ### Smart Contract Deployment
 
-#### Setting up Chainlink Services
+The contract is already deployed on:
+- **Base Mainnet**: `0xbf2DCB5Baa80b6A2029B3930f39B052bbbee8E57`
+- **Base Sepolia**: `0x929b6074A4Fd5Bc4eEEB18522Bbc2eD6578dC564`
 
-1. **VRF Subscription Setup**:
-   - Visit [Chainlink VRF](https://vrf.chain.link/)
-   - Connect your wallet and create a new subscription
-   - Fund the subscription with LINK tokens (at least 2-5 LINK recommended)
-   - Note your subscription ID for contract deployment
+#### Deploying Your Own Contract
 
-2. **Prepare Deployment Parameters**:
-   - VRF Coordinator address for your target network
-   - VRF Subscription ID from the previous step
-   - Key Hash for the target network's VRF configuration
+If you want to deploy your own instance:
 
-3. **Deploy Contract**:
+1. **Prepare Deployment**:
+   - Get USDC token address for your target network:
+     - Base Mainnet: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
+     - Base Sepolia: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
 
-Using Hardhat (sample script, adjust for your environment):
+2. **Deploy Contract** (using Remix, Hardhat, or Foundry):
 
-```bash
-# Install Hardhat if not already installed
-npm install --save-dev hardhat
+```solidity
+// Constructor parameter: USDC token address
+constructor(address _usdcToken) Ownable(msg.sender) {
+    require(_usdcToken != address(0), "Invalid USDC token address");
+    usdcToken = IERC20(_usdcToken);
+    _registerEmployer(msg.sender, "System Admin", true);
+}
+```
 
-# Create deploy script in scripts/deploy.js
-cat > scripts/deploy.js << 'EOL'
+Example using Hardhat:
+
+```javascript
+// scripts/deploy.js
 const hre = require("hardhat");
 
 async function main() {
-  const VRF_COORDINATOR = "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625"; // Sepolia
-  const SUBSCRIPTION_ID = "YOUR_SUBSCRIPTION_ID";
-  const KEY_HASH = "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c";
+  // Base Sepolia USDC address
+  const USDC_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 
-  const Opera = await hre.ethers.getContractFactory("OperaContract");
-  const opera = await Opera.deploy(
-    VRF_COORDINATOR,
-    SUBSCRIPTION_ID,
-    KEY_HASH
-  );
+  const OperaUSDC = await hre.ethers.getContractFactory("OperaContractUSDC");
+  const opera = await OperaUSDC.deploy(USDC_ADDRESS);
 
   await opera.deployed();
-
-  console.log("Opera deployed to:", opera.address);
+  console.log("Opera USDC Contract deployed to:", opera.address);
 }
 
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-EOL
-
-# Run deployment
-npx hardhat run scripts/deploy.js --network sepolia
 ```
 
-4. **Chainlink Automation Registration**:
-   - Visit [Chainlink Automation](https://automation.chain.link/)
-   - Register a new upkeep using the "Custom Logic" option
-   - Enter your deployed contract address
-   - Fund the upkeep with LINK tokens (at least 5-10 LINK recommended)
-   - Complete the registration process
-
-5. **Configure Frontend**:
-   - Update contract addresses in `src/lib/contracts.ts` with your deployed address
+3. **Configure Frontend**:
+   - Update contract addresses in [src/lib/contracts.ts](./src/lib/contracts.ts):
+   ```typescript
+   export const CONTRACT_ADDRESS_BASE_MAINNET = "your_deployed_address";
+   export const CONTRACT_ADDRESS_BASE_SEPOLIA = "your_deployed_address";
+   ```
 
 ### Configuration Options
 
-#### Smart Contract Configuration
+#### Smart Contract Configuration (Owner-Only)
 
-- `PAYMENT_INTERVAL`: Payment cycle duration (default: 30 days)
-- `bonusAmount`: Amount for random bonuses (default: 0.1 ETH)
-- `bonusLotteryEnabled`: Toggle for bonus functionality
-- `employerRegistrationFee`: Fee for new employer registration
+- `PAYMENT_INTERVAL`: Payment cycle duration (constant: 30 days)
+- `bonusAmount`: Amount for random bonuses in USDC (default: 100 USDC / 100000000 with 6 decimals)
+- `bonusLotteryEnabled`: Toggle for bonus functionality (default: true)
+- `employerRegistrationFee`: Fee for new employer registration in USDC (default: 10 USDC / 10000000 with 6 decimals)
+
+Modify these via owner functions:
+```solidity
+setBonusAmount(uint256 _newBonusAmount)              // Update bonus amount
+toggleBonusLottery(bool _enabled)                    // Enable/disable lottery
+setEmployerRegistrationFee(uint256 _newFee)          // Update registration fee
+```
 
 #### Frontend Environment Variables
 
-- `NEXT_PUBLIC_ALCHEMY_API_KEY`: API key for Alchemy RPC services
-- `NEXT_PUBLIC_REOWN_PROJECT_ID`: Project ID for Reown integration
-- `NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL`: RPC endpoint for Base Sepolia
-- `NEXT_PUBLIC_SEPOLIA_RPC_URL`: RPC endpoint for Sepolia
+- `NEXT_PUBLIC_ALCHEMY_API_KEY`: API key for Alchemy RPC services (Base network)
+- `NEXT_PUBLIC_REOWN_PROJECT_ID`: Project ID for Reown/WalletConnect integration
+
+The app automatically connects to the correct network (Base Mainnet or Base Sepolia) based on user's wallet connection.
 
 ## Usage Examples
 
@@ -636,7 +604,7 @@ function AddEmployeeForm() {
 
 ```typescript
 import { useEmployeeDetails } from '@/hooks/use-opera-contract';
-import { formatEther } from 'viem';
+import { formatUnits } from 'viem';
 
 function EmployeeDashboard() {
     const { address } = useAccount();
@@ -647,9 +615,51 @@ function EmployeeDashboard() {
     return (
         <div>
             <h2>Welcome, {employee.name}</h2>
-            <p>Salary: {formatEther(employee.salary)} ETH</p>
+            <p>Salary: {formatUnits(employee.salary, 6)} USDC</p>
             <p>Next payment: {calculateNextPayment(employee.lastPayment)}</p>
+            <p>Employer: {employee.employer}</p>
             {/* Additional employee information */}
+        </div>
+    );
+}
+```
+
+### USDC Approval and Deposit Flow
+
+```typescript
+import { useApproveUsdc } from '@/hooks/use-usdc';
+import { useDepositFunds } from '@/hooks/use-opera-contract';
+import { parseUnits } from 'viem';
+
+function DepositFundsFlow() {
+    const [amount, setAmount] = useState('');
+    const { approve, isPending: isApproving } = useApproveUsdc();
+    const { deposit, isPending: isDepositing } = useDepositFunds();
+
+    const handleDeposit = async () => {
+        const amountInUsdc = parseUnits(amount, 6); // USDC has 6 decimals
+
+        // Step 1: Approve USDC
+        await approve(amountInUsdc);
+
+        // Step 2: Deposit funds
+        await deposit(amountInUsdc);
+    };
+
+    return (
+        <div>
+            <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Amount in USDC"
+            />
+            <button
+                onClick={handleDeposit}
+                disabled={isApproving || isDepositing}
+            >
+                {isApproving ? 'Approving...' : isDepositing ? 'Depositing...' : 'Deposit USDC'}
+            </button>
         </div>
     );
 }
@@ -657,59 +667,66 @@ function EmployeeDashboard() {
 
 ## Testing
 
+### Testing on Base Sepolia
+
+1. **Get Testnet ETH**:
+   - Visit [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
+   - Request testnet ETH for gas fees
+
+2. **Get Testnet USDC**:
+   - Use a USDC faucet or DEX on Base Sepolia
+   - USDC Address: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
+
+3. **Test Employer Flow**:
+   - Connect wallet to Base Sepolia
+   - Approve 10 USDC for registration fee
+   - Register as employer
+   - Approve USDC for deposit
+   - Deposit USDC to contract balance
+   - Add employees
+   - Trigger payment
+
+4. **Test Employee Flow**:
+   - Connect with employee wallet
+   - View employment details
+   - Monitor payment history
+   - Check USDC balance after payment
+
 ### Smart Contract Testing
 
-Opera uses a comprehensive testing suite to ensure contract reliability:
-
-```bash
-# Install testing dependencies
-npm install --save-dev @nomiclabs/hardhat-ethers @nomiclabs/hardhat-waffle chai ethereum-waffle
-
-# Run tests
-npx hardhat test
-```
-
-Sample test structure:
+For testing the smart contract with Hardhat or Foundry:
 
 ```javascript
-describe("OperaContract", function () {
-  let opera;
-  let owner;
-  let employer;
-  let employee;
+describe("OperaContractUSDC", function () {
+  let opera, usdc;
+  let owner, employer, employee;
 
   beforeEach(async function () {
-    // Deploy contract and set up test accounts
+    // Deploy mock USDC
+    const MockUSDC = await ethers.getContractFactory("MockERC20");
+    usdc = await MockUSDC.deploy("USDC", "USDC", 6);
+
+    // Deploy Opera contract
+    const Opera = await ethers.getContractFactory("OperaContractUSDC");
+    opera = await Opera.deploy(usdc.address);
+
+    // Fund accounts with mock USDC
+    await usdc.mint(employer.address, parseUnits("10000", 6));
   });
 
   describe("Employer Registration", function () {
-    it("Should allow registration with fee", async function () {
-      // Test registration
+    it("Should require USDC approval for registration", async function () {
+      await usdc.connect(employer).approve(opera.address, parseUnits("10", 6));
+      await opera.connect(employer).registerAsEmployer("Test Company");
     });
-
-    it("Should reject registration without fee", async function () {
-      // Test validation
-    });
-  });
-
-  describe("Employee Management", function () {
-    // Employee-related tests
   });
 
   describe("Payment Processing", function () {
-    // Payment-related tests
+    it("Should transfer USDC to employees", async function () {
+      // Test USDC payment flow
+    });
   });
 });
-```
-
-### Frontend Testing
-
-```bash
-# Run component tests
-pnpm test
-
-# Run end-to-end tests
-pnpm test:e2e
 ```
 
 ## Development Workflow
@@ -741,35 +758,56 @@ pnpm lint
 pnpm lint:fix
 ```
 
+## Deployed Contracts
+
+### Contract Addresses
+
+| Network | Contract Address | USDC Address | Explorer |
+|---------|------------------|--------------|----------|
+| Base Mainnet | `0xbf2DCB5Baa80b6A2029B3930f39B052bbbee8E57` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | [BaseScan](https://basescan.org/address/0xbf2DCB5Baa80b6A2029B3930f39B052bbbee8E57) |
+| Base Sepolia | `0x929b6074A4Fd5Bc4eEEB18522Bbc2eD6578dC564` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | [BaseScan Testnet](https://sepolia.basescan.org/address/0x929b6074A4Fd5Bc4eEEB18522Bbc2eD6578dC564) |
+
 ## Future Development
 
 Future enhancements planned for Opera include:
 
-### Flexibility & Integration
+### Payment Automation
 
-- **Multi-token Support**: Allow payments in various ERC-20 tokens including stablecoins
-- **Flexible Payment Schedules**: Support for weekly, bi-weekly, or custom intervals
-- **API Endpoints**: Create interfaces for integration with existing systems
-- **Simplified Onboarding**: Enhanced UX for non-technical users
-- **Basic Tax Calculation**: Initial tax withholding capabilities
+- **Chainlink Automation Integration**: Automatic payroll execution every 30 days without manual triggering
+- **Scheduled Payments**: Pre-scheduled payment dates and recurring transfers
+- **Flexible Payment Intervals**: Support for weekly, bi-weekly, or custom pay periods
 
-### Compliance & Experience
+### Token & Payment Options
 
-- **Comprehensive Tax System**: Jurisdiction-based tax withholding
-- **Document Generation**: Automated creation of tax and compliance documents
-- **Regulatory Reporting**: Tools for government and financial compliance
-- **Employee Self-Service**: Enhanced employee dashboard capabilities
-- **Approval Workflows**: Multi-signature and role-based approvals
-- **Fiat Integration**: On/off ramps for traditional currency conversion
+- **Multi-Stablecoin Support**: Accept USDT, DAI, and other stablecoins alongside USDC
+- **Multi-token Salaries**: Allow employees to receive payment in their preferred token
+- **Fiat On/Off Ramps**: Integration with services like Coinbase Commerce for fiat conversion
+- **Cross-chain Payments**: Support for multiple blockchain networks (Ethereum, Polygon, Arbitrum, Optimism)
 
-### Scale & Enterprise Readiness
+### Enhanced Features
 
-- **Gas Optimization**: Batch processing and Layer 2 integration
-- **Advanced Analytics**: Comprehensive data visualization and reporting
-- **Enterprise Security**: Multi-factor authentication and enhanced controls
-- **Benefits Management**: Integration with health insurance and retirement plans
-- **Time Tracking**: Attendance and work hour recording
-- **Department Organization**: Organizational structure modeling
+- **Verifiable Randomness**: Integrate Chainlink VRF for provably fair bonus lottery
+- **Tax Withholding**: Automatic tax calculation and withholding based on jurisdiction
+- **Invoice Generation**: Automated payslip and tax document generation
+- **Escrow System**: Hold funds in escrow until payment conditions are met
+- **Partial Payments**: Support for advance payments and payment installments
+
+### Enterprise & Compliance
+
+- **Multi-signature Wallets**: Require multiple approvals for large transactions
+- **Role-Based Access Control**: Department managers, HR roles, finance roles
+- **Audit Trails**: Comprehensive logging for compliance and reporting
+- **Department Structure**: Organize employees by departments and teams
+- **Benefits Management**: Track and manage employee benefits and bonuses
+- **Time & Attendance**: Integration with time tracking for hourly workers
+
+### User Experience
+
+- **Mobile App**: React Native mobile application for iOS and Android
+- **Email Notifications**: Alert employees of upcoming and completed payments
+- **Dashboard Analytics**: Advanced charts and reports for payroll insights
+- **CSV Import/Export**: Bulk employee management via CSV files
+- **API Access**: RESTful API for third-party integrations
 
 ## License
 
@@ -777,6 +815,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- [Chainlink](https://chain.link/) for providing the decentralized oracle infrastructure
-- [OpenZeppelin](https://openzeppelin.com/) for secure smart contract components
+- [Base](https://base.org/) for providing a fast, low-cost Layer 2 blockchain infrastructure
+- [Circle](https://www.circle.com/) for USDC stablecoin infrastructure
+- [OpenZeppelin](https://openzeppelin.com/) for secure smart contract components (Ownable, ReentrancyGuard, SafeERC20)
+- [Reown (WalletConnect)](https://reown.com/) for multi-wallet connection infrastructure
 - [shadcn/ui](https://ui.shadcn.com/) for the accessible component system
+- [Radix UI](https://www.radix-ui.com/) for unstyled, accessible UI primitives
+- [Vercel](https://vercel.com/) for Next.js framework and hosting platform
+- [Alchemy](https://www.alchemy.com/) for reliable RPC infrastructure
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+## Support
+
+If you encounter any issues or have questions:
+- Open an issue on [GitHub](https://github.com/yourusername/opera/issues)
+- Check the [documentation](./README.md)
+- Review contract code in [OperaContractUSDC.sol](./OperaContractUSDC.sol)
+
+## Security
+
+If you discover a security vulnerability, please send an email to security@yourproject.com. Please do not open a public issue for security vulnerabilities.

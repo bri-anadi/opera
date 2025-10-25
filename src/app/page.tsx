@@ -12,15 +12,14 @@ import {
   Coins,
   Building,
   Users,
-  Clock,
-  Award,
-  ShieldCheck,
   Globe,
   Briefcase,
   Rocket,
   DollarSign,
   PiggyBank,
-  LucideIcon
+  LucideIcon,
+  TrendingUp,
+  Zap
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { BackgroundBeams } from '@/components/ui/background-beams';
@@ -72,7 +71,7 @@ export default function HomePage() {
           Open Payroll Raising Automatically
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl">
-          A decentralized payroll system that automatically pays your employees on time, every time. Built on blockchain for transparency and reliability.
+          Gasless payroll powered by yield generation. Pay your employees in USDC or EURC without transaction fees. Built on Base for transparency and reliability.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 mt-4 z-10">
           {isConnected ? (
@@ -108,42 +107,39 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl mb-6">About Opera</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Opera is revolutionizing payroll management through blockchain technology,
-              providing a transparent, secure, and automated solution for businesses of all sizes.
+              Opera is revolutionizing payroll with gasless transactions powered by DeFi yield generation.
+              Pay your team in USDC or EURC without worrying about gas fees—our smart yield strategy covers all transaction costs.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-card border rounded-4xl p-8 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShieldCheck className="h-8 w-8 text-primary" />
+                <PiggyBank className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl mb-4">Secure & Trustless</h3>
+              <h3 className="text-xl mb-4">Gasless Withdrawals</h3>
               <p className="text-muted-foreground">
-                Opera leverages blockchain technology to create a trustless payroll system,
-                eliminating the need for intermediaries and ensuring funds are securely allocated.
+                Employees withdraw salaries without paying gas fees. Our yield generation strategy from employer deposits automatically covers all transaction costs.
               </p>
             </div>
 
             <div className="bg-card border rounded-4xl p-8 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Globe className="h-8 w-8 text-primary" />
+                <Coins className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl mb-4">Global & Borderless</h3>
+              <h3 className="text-xl mb-4">Multi-Token Support</h3>
               <p className="text-muted-foreground">
-                Pay employees anywhere in the world without currency conversion fees or
-                banking restrictions. Opera makes global hiring and payments seamless.
+                Pay salaries in USDC or EURC. Flexible stablecoin options for global teams with transparent on-chain tracking on Base network.
               </p>
             </div>
 
             <div className="bg-card border rounded-4xl p-8 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="h-8 w-8 text-primary" />
+                <DollarSign className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl mb-4">Fully Automated</h3>
+              <h3 className="text-xl mb-4">Yield-Powered Revenue</h3>
               <p className="text-muted-foreground">
-                Opera&apos;s smart contracts automate the entire payroll process,
-                from salary calculations to payments, ensuring employees are paid on time, every time.
+                10% of deposits generate yield through DeFi protocols. Yield covers gas fees and creates sustainable protocol revenue—a win-win model.
               </p>
             </div>
           </div>
@@ -164,16 +160,26 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="lg:w-1/2">
-                <h3 className="text-2xl mb-4">Built for the Future of Work</h3>
+                <h3 className="text-2xl mb-4">How Dynamic Yield Works</h3>
                 <p className="text-muted-foreground mb-6">
-                  As remote work and global teams become the norm, traditional payroll systems struggle
-                  to keep up. Opera was designed from the ground up to address the unique challenges of
-                  modern, distributed workforces.
+                  When employers deposit funds, 10% automatically goes into DeFi yield generation (Aave, Compound).
+                  This yield covers gas fees for employee withdrawals and generates protocol revenue—making
+                  payroll completely gasless for your team.
                 </p>
-                <p className="text-muted-foreground">
-                  Our platform leverages Chainlink Automation and VRF to ensure reliable,
-                  verifiable operations with built-in incentives like bonus lotteries to boost team morale.
-                </p>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2 text-muted-foreground">
+                    <TrendingUp className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <span>Earn ~3-5% APY on deposited funds through Aave V3</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-muted-foreground">
+                    <Zap className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <span>Yield automatically covers all employee withdrawal gas fees</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-muted-foreground">
+                    <DollarSign className="h-5 w-5  flex-shrink-0 mt-0.5" />
+                    <span>Excess yield becomes sustainable protocol revenue</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -185,34 +191,34 @@ export default function HomePage() {
         <h2 className="text-3xl text-center mb-12">Key Features</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <FeatureCard
+            icon={<Coins className="h-10 w-10" />}
+            title="Multi-Token Payroll"
+            description="Pay employees in USDC or EURC. Flexible stablecoin options for global teams with full on-chain transparency."
+          />
+          <FeatureCard
+            icon={<Zap className="h-10 w-10" />}
+            title="Gasless Withdrawals"
+            description="Employees withdraw salaries with zero gas fees. Our yield strategy covers all transaction costs automatically."
+          />
+          <FeatureCard
+            icon={<TrendingUp className="h-10 w-10" />}
+            title="Yield Generation"
+            description="10% of deposits earn yield through Aave V3. Passive income covers gas fees and creates protocol revenue."
+          />
+          <FeatureCard
             icon={<Building className="h-10 w-10" />}
-            title="Employer Management"
-            description="Register as an employer and manage your company&apos;s payroll system with ease."
+            title="Employer Dashboard"
+            description="Manage employees, track balances, monitor yield generation, and process payroll all in one place."
           />
           <FeatureCard
             icon={<Users className="h-10 w-10" />}
-            title="Employee Administration"
-            description="Add, remove, and update employee details and salaries directly from the dashboard."
+            title="Employee Management"
+            description="Add, remove, and update employee details and salaries with different tokens per employee."
           />
           <FeatureCard
-            icon={<Coins className="h-10 w-10" />}
-            title="Automatic Payments"
-            description="Salary payments are processed automatically on schedule with Chainlink Automation."
-          />
-          <FeatureCard
-            icon={<Clock className="h-10 w-10" />}
-            title="Payment Schedule"
-            description="Set payment intervals that work for your business and employees."
-          />
-          <FeatureCard
-            icon={<Award className="h-10 w-10" />}
-            title="Bonus Lottery"
-            description="Randomly select employees for bonuses to boost morale and reward performance."
-          />
-          <FeatureCard
-            icon={<Coins className="h-10 w-10" />}
-            title="Fund Management"
-            description="Deposit and manage funds for payroll in a transparent and secure way."
+            icon={<DollarSign className="h-10 w-10" />}
+            title="Transparent Revenue"
+            description="Dynamic fee model (50-90%) based on pool size. Fair, transparent, and sustainable for protocol growth."
           />
         </div>
       </section>
@@ -279,30 +285,35 @@ export default function HomePage() {
       {/* How It Works Section */}
       <section className="py-24 bg-muted rounded-4xl p-16">
         <h2 className="text-3xl text-center mb-12">How It Works</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="flex flex-col items-center text-center">
             <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center mb-4">1</div>
             <h3 className="text-xl mb-2">Register</h3>
-            <p className="text-muted-foreground">Connect your wallet and register as an employer with a small fee.</p>
+            <p className="text-muted-foreground">Connect wallet and register as employer. Pay small fee in USDC or EURC.</p>
           </div>
           <div className="flex flex-col items-center text-center">
             <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center mb-4">2</div>
-            <h3 className="text-xl mb-2">Configure</h3>
-            <p className="text-muted-foreground">Add employees, set salaries, and deposit funds to cover payroll.</p>
+            <h3 className="text-xl mb-2">Deposit 110%</h3>
+            <p className="text-muted-foreground">Deposit 100% for salaries + 10% for yield pool. Choose USDC or EURC per employee.</p>
           </div>
           <div className="flex flex-col items-center text-center">
             <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center mb-4">3</div>
-            <h3 className="text-xl mb-2">Automate</h3>
-            <p className="text-muted-foreground">Let the system handle payments automatically based on schedules.</p>
+            <h3 className="text-xl mb-2">Earn Yield</h3>
+            <p className="text-muted-foreground">10% generates yield on Aave. Covers gas fees for all employee withdrawals.</p>
+          </div>
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center mb-4">4</div>
+            <h3 className="text-xl mb-2">Gasless Payroll</h3>
+            <p className="text-muted-foreground">Employees withdraw salary without gas fees. Completely gasless experience.</p>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="min-h-[70vh] flex flex-col items-center justify-center text-center">
-        <h2 className="text-3xl mb-4">Ready to modernize your payroll?</h2>
+        <h2 className="text-3xl mb-4">Ready for Gasless Payroll?</h2>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-          Join Opera today and experience the future of payroll management.
+          Join Opera today and pay your team without gas fees. Our yield-powered model makes payroll sustainable for everyone.
         </p>
         {!isConnected ? (
           <div className="flex justify-center">

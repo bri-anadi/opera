@@ -37,19 +37,53 @@ erDiagram
 
 ## Key Features
 
-### USDC Stablecoin Payments
+### Multi-Token Stablecoin Support (USDC & EURC)
 
-Opera uses USDC (USD Coin) as the primary payment currency, providing:
-- **Price Stability**: Employees receive predictable value pegged to USD
+Opera supports multiple stablecoins for flexible payroll management:
+- **USDC (USD Coin)**: Price stability pegged to USD
+- **EURC (Euro Coin)**: Euro-denominated stablecoin for European markets
 - **Fast Transactions**: Leverages Base network for quick, low-cost transfers
-- **Wide Acceptance**: USDC is widely supported and easily convertible
+- **Wide Acceptance**: Both tokens are widely supported and easily convertible
 - **Transparency**: All transactions are on-chain and verifiable
 
-The smart contract ([OperaContractUSDC.sol](./OperaContractUSDC.sol)) handles:
-1. USDC deposits from employers to contract balance
-2. Salary payments in USDC to employees
-3. Registration fees in USDC
-4. Bonus lottery system in USDC (when enabled)
+### Gasless Payroll with Dynamic Yield (Upcoming)
+
+Opera is developing a revolutionary **gasless payroll system** powered by yield generation:
+
+**How It Works:**
+1. **Employer Deposits**: Employers deposit 110% of total payroll
+   - 100% → Salary Pool (for employee payments)
+   - 10% → Yield Pool (deposited to Aave/DeFi protocols)
+
+2. **Yield Generation**: The 10% yield pool earns interest (~3-5% APY)
+   - Interest is generated passively from DeFi lending protocols
+   - No additional cost to employers beyond the initial 10%
+
+3. **Gas Sponsorship**: Yield covers transaction fees
+   - **Employee withdrawals**: Completely gasless for employees
+   - **Employer deposits**: Gas fees sponsored by yield
+   - **Sustainable**: Yield typically exceeds gas costs significantly
+
+4. **Dynamic Revenue Model**:
+   - **Priority**: Gas coverage for employee transactions
+   - **Excess Yield**: Protocol revenue (50-90% based on pool size)
+   - **Scalability**: Larger pools = more yield = more sustainability
+
+**Benefits:**
+- ✅ **Zero Gas Fees for Employees**: Withdraw salary without needing ETH
+- ✅ **Lower Costs for Employers**: One-time 10% extra, earns yield back over time
+- ✅ **Sustainable Protocol**: Revenue from excess yield, not user fees
+- ✅ **Fully Transparent**: All yield and gas sponsorship tracked on-chain
+
+**Current Status**: Multi-token foundation (USDC & EURC) implemented. Dynamic yield system in development.
+
+The smart contract handles:
+1. Multi-token deposits (USDC/EURC) from employers to contract balance
+2. Salary payments in employee's chosen token
+3. Registration fees in selected stablecoin
+4. Token-specific balance tracking and management
+5. (Upcoming) Yield pool deposits to Aave V3 on Base
+6. (Upcoming) Gas sponsorship via yield-generated revenue
 
 ## Project Description
 
@@ -160,7 +194,53 @@ Opera addresses these challenges by leveraging blockchain technology and smart c
 
 ## Architecture Overview
 
-Opera follows a decentralized architecture with three main components:
+Opera follows a decentralized architecture with multiple integrated components:
+
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        UI[User Interface - Next.js]
+        Dashboard[Employer/Employee Dashboards]
+        YieldUI[Yield Analytics UI - Upcoming]
+    end
+
+    subgraph "Smart Contract Layer - Base Network"
+        MultiToken[Opera Multi-Token Contract]
+        YieldContract[Opera Yield Contract - Upcoming]
+        USDC[USDC Token]
+        EURC[EURC Token]
+    end
+
+    subgraph "DeFi Integration - Upcoming"
+        Aave[Aave V3 Lending Pool]
+        Paymaster[ERC-4337 Paymaster]
+    end
+
+    subgraph "Users"
+        Employer[Employer]
+        Employee[Employee]
+    end
+
+    Employer --> UI
+    Employee --> UI
+    UI --> Dashboard
+    Dashboard --> MultiToken
+
+    MultiToken --> USDC
+    MultiToken --> EURC
+
+    YieldContract -.->|Deposits 10%| Aave
+    Aave -.->|Generates Yield| YieldContract
+    YieldContract -.->|Sponsors Gas| Paymaster
+    Paymaster -.->|Gasless Tx| Employee
+
+    style YieldContract fill:#f9f,stroke:#333,stroke-dasharray: 5 5
+    style Aave fill:#f9f,stroke:#333,stroke-dasharray: 5 5
+    style Paymaster fill:#f9f,stroke:#333,stroke-dasharray: 5 5
+    style YieldUI fill:#f9f,stroke:#333,stroke-dasharray: 5 5
+```
+
+### Current Architecture (V1 - Multi-Token)
 
 ### 1. Smart Contract Layer
 
@@ -215,16 +295,90 @@ The frontend provides intuitive access to contract functionality through purpose
 The blockchain provides the settlement layer and source of truth:
 
 - **Transaction Processing**:
-  - Employer-initiated transactions (registration with USDC fee, employee management, USDC deposits)
+  - Employer-initiated transactions (registration with USDC/EURC fee, employee management, token deposits)
   - Manual payment execution by employers (`payMyEmployees` function)
-  - USDC token approvals and transfers
+  - Multi-token approvals and transfers (USDC/EURC)
   - Gas-optimized for Base network's low transaction costs
 
 - **Data Persistence**:
   - Immutable record of all system activities on Base blockchain
   - Transparent, verifiable state accessible to all participants
   - Historical data for compliance and audit purposes
-  - All USDC transactions traceable on-chain
+  - All token transactions traceable on-chain
+
+### Future Architecture (V2 - Dynamic Yield & Gasless)
+
+The upcoming yield-based architecture will add several new components:
+
+#### 4. DeFi Yield Layer (Upcoming)
+
+Integration with decentralized lending protocols for yield generation:
+
+- **Aave V3 Integration**:
+  - Automatic deposit of 10% employer funds to Aave lending pools
+  - Earn variable APY on stablecoin deposits (~3-5% typical)
+  - Real-time tracking of aToken balances (interest-bearing tokens)
+  - Withdraw mechanism for gas sponsorship and revenue
+
+- **Yield Management**:
+  - Daily automated yield harvesting via Chainlink Keepers
+  - Dynamic distribution: Gas coverage (priority) → Protocol revenue (remainder)
+  - Multi-token yield pools (separate USDC and EURC pools)
+  - Compound interest through auto-reinvestment
+
+- **Risk Management**:
+  - Diversification across multiple protocols (Aave, Compound, MorphoBlue)
+  - Monitoring of protocol health and APY rates
+  - Emergency withdraw functions for protocol upgrades
+  - Reserve buffer for yield volatility
+
+#### 5. Gas Sponsorship Layer (Upcoming)
+
+ERC-4337 paymaster integration for gasless transactions:
+
+- **Paymaster Architecture**:
+  - Custom paymaster contract funded by yield pool
+  - Whitelist Opera contract functions for sponsorship
+  - Per-user and global gas limits for cost control
+  - Integration with Coinbase CDP Paymaster or Pimlico
+
+- **Sponsored Operations**:
+  - Employee salary withdrawals (100% gasless)
+  - Employer deposits (optional sponsorship)
+  - Employee registration (onboarding incentive)
+  - Gas cost tracking and analytics
+
+- **Dynamic Fee Model**:
+  ```
+  Pool Size         | Protocol Fee | Use Case
+  ------------------|--------------|------------------
+  < $10k           | 50%          | Early adopters
+  $10k - $100k     | 70%          | Growing platform
+  > $100k          | 90%          | Mature platform
+  ```
+
+#### 6. Analytics & Monitoring Layer (Upcoming)
+
+Comprehensive dashboards for yield and revenue tracking:
+
+- **Employer Yield Dashboard**:
+  - Personal yield pool balance and earned interest
+  - Estimated monthly yield generation
+  - Gas sponsorship usage and savings
+  - Yield pool performance over time
+
+- **Protocol Revenue Dashboard** (Admin):
+  - Total yield generated across all employers
+  - Gas fees sponsored (cumulative and monthly)
+  - Protocol revenue (yield - gas costs)
+  - Current dynamic fee percentage
+  - Pool size and APY metrics
+
+- **Real-time Monitoring**:
+  - Yield harvesting events and amounts
+  - Gas sponsorship transactions
+  - Protocol health indicators
+  - Revenue projections and trends
 
 ### Security Considerations
 
@@ -771,6 +925,37 @@ pnpm lint:fix
 
 Future enhancements planned for Opera include:
 
+### Dynamic Yield & Gasless Transactions (Priority)
+
+**Phase 1: Yield Integration** (Q2 2025)
+- **Aave V3 Integration**: Deposit 10% of payroll to Aave lending pools on Base
+- **Yield Tracking**: Real-time monitoring of yield generation and gas coverage
+- **Smart Contract Upgrade**: Deploy OperaContractWithYield.sol
+- **Testing**: Beta testing with 5-10 employers on Base Sepolia
+
+**Phase 2: Gas Sponsorship** (Q3 2025)
+- **Paymaster Integration**: Connect yield pool to ERC-4337 paymaster
+- **Gasless Employee Withdrawals**: Employees withdraw salary without ETH
+- **Dynamic Fee Model**: Protocol revenue adjusts based on pool size (50-90%)
+- **Revenue Dashboard**: Admin interface for yield and revenue analytics
+
+**Phase 3: Optimization** (Q4 2025)
+- **Multi-Protocol Yield**: Diversify across Aave, Compound, MorphoBlue
+- **Automated Harvesting**: Daily yield harvesting via Chainlink automation
+- **Gas Optimization**: Minimize sponsorship costs through batch processing
+- **Cross-Chain Yield**: Leverage yield opportunities across Base, Optimism, Arbitrum
+
+**Economic Model:**
+```
+Example with 100 employers ($1M payroll pool):
+- Yield pool: $100,000 (10% of deposits)
+- Annual yield (4% APY): $4,000
+- Monthly yield: $333
+- Gas costs: ~$50/month (Base network)
+- Protocol revenue: $283/month (~$3,396/year)
+- Sustainability: ✅ Yield > Gas costs by 6.6x
+```
+
 ### Payment Automation
 
 - **Chainlink Automation Integration**: Automatic payroll execution every 30 days without manual triggering
@@ -779,7 +964,7 @@ Future enhancements planned for Opera include:
 
 ### Token & Payment Options
 
-- **Multi-Stablecoin Support**: Accept USDT, DAI, and other stablecoins alongside USDC
+- **Additional Stablecoins**: Accept USDT, DAI, and other stablecoins alongside USDC/EURC
 - **Multi-token Salaries**: Allow employees to receive payment in their preferred token
 - **Fiat On/Off Ramps**: Integration with services like Coinbase Commerce for fiat conversion
 - **Cross-chain Payments**: Support for multiple blockchain networks (Ethereum, Polygon, Arbitrum, Optimism)

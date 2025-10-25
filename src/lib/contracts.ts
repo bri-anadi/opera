@@ -2,7 +2,7 @@
 
 // Multi-Token Opera Contract Addresses (USDC + EURC Support)
 export const MULTI_TOKEN_CONTRACT_ADDRESS = {
-  8453: "0x0000000000000000000000000000000000000000", // TODO: Deploy to Base Mainnet
+  8453: "0x39E7f0006001f43576a4EB66b1Ba5A59A3F60473", // TODO: Deploy to Base Mainnet
   84532: "0x85230c7d80bA6D535BdFD83999F395Afa1e3ee44" // TODO: Deploy to Base Sepolia
 } as const;
 

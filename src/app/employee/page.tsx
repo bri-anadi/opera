@@ -3,9 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { formatUsdc } from '@/lib/usdc-utils';
+import { formatToken } from '@/lib/token-utils';
+import { TokenSymbol } from '@/lib/token-config';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { useEmployeeDetails } from '@/hooks/use-opera-contract';
+import { useEmployeeDetails } from '@/hooks/use-multi-token-contract';
 import { useEmployeeTransactionHistory, TransactionType } from '@/hooks/use-transaction-history';
 import { Loader2, Clock, CheckCircle, AlertCircle, ArrowDownCircle, Award, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -169,7 +170,12 @@ export default function EmployeeDashboard() {
                     <CardContent className="space-y-4">
                         <div>
                             <p className="text-sm text-muted-foreground">Monthly Salary</p>
-                            <p className="font-medium text-2xl">{formatUsdc(employee.salary, 2)} USDC</p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl">{employee.salaryTokenSymbol === 'USDC' ? '💵' : '💶'}</span>
+                                <p className="font-medium text-2xl">
+                                    {formatToken(employee.salary, employee.salaryTokenSymbol as TokenSymbol)} {employee.salaryTokenSymbol}
+                                </p>
+                            </div>
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Last Payment</p>
@@ -227,8 +233,10 @@ export default function EmployeeDashboard() {
                                             </TableCell>
                                             <TableCell>{new Date(tx.timestamp * 1000).toLocaleDateString()}</TableCell>
                                             <TableCell>
-                                                {tx.amount ? (
-                                                    <span className="font-medium">{formatUsdc(tx.amount, 2)} USDC</span>
+                                                {tx.amount && employee ? (
+                                                    <span className="font-medium">
+                                                        {employee.salaryTokenSymbol === 'USDC' ? '💵' : '💶'} {formatToken(tx.amount, employee.salaryTokenSymbol as TokenSymbol)} {employee.salaryTokenSymbol}
+                                                    </span>
                                                 ) : (
                                                     <span className="text-muted-foreground">-</span>
                                                 )}

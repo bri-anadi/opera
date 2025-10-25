@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { CONTRACT_ADDRESS_BASE_SEPOLIA, CONTRACT_ADDRESS_BASE_MAINNET } from "@/lib/contracts";
+import { MULTI_TOKEN_CONTRACT_ADDRESS } from "@/lib/contracts";
 import {
     Github,
     Twitter,
@@ -72,10 +72,10 @@ export function Footer() {
                         <h3 className="font-medium text-lg">Contract Addresses</h3>
                         <ul className="space-y-2">
                             <li className="text-sm">
-                                <p className="text-muted-foreground mb-1">Base Sepolia</p>
+                                <p className="text-muted-foreground mb-1">Base Sepolia (Multi-Token)</p>
                                 <div className="flex items-center">
                                     <code className="text-xs font-mono bg-muted rounded p-1 truncate max-w-44">
-                                        {CONTRACT_ADDRESS_BASE_SEPOLIA}
+                                        {MULTI_TOKEN_CONTRACT_ADDRESS[84532]}
                                     </code>
                                     <Button
                                         size="icon"
@@ -84,7 +84,7 @@ export function Footer() {
                                         asChild
                                     >
                                         <a
-                                            href={`https://sepolia.basescan.org/address/${CONTRACT_ADDRESS_BASE_SEPOLIA}`}
+                                            href={`https://sepolia.basescan.org/address/${MULTI_TOKEN_CONTRACT_ADDRESS[84532]}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             title="View on Base Sepolia Explorer"
@@ -95,10 +95,10 @@ export function Footer() {
                                 </div>
                             </li>
                             <li className="text-sm">
-                                <p className="text-muted-foreground mb-1">Base Mainnet</p>
+                                <p className="text-muted-foreground mb-1">Base Mainnet (Multi-Token)</p>
                                 <div className="flex items-center">
                                     <code className="text-xs font-mono bg-muted rounded p-1 truncate max-w-44">
-                                        {CONTRACT_ADDRESS_BASE_MAINNET}
+                                        {MULTI_TOKEN_CONTRACT_ADDRESS[8453]}
                                     </code>
                                     <Button
                                         size="icon"
@@ -107,7 +107,7 @@ export function Footer() {
                                         asChild
                                     >
                                         <a
-                                            href={`https://basescan.org/address/${CONTRACT_ADDRESS_BASE_MAINNET}`}
+                                            href={`https://basescan.org/address/${MULTI_TOKEN_CONTRACT_ADDRESS[8453]}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             title="View on Base Explorer"

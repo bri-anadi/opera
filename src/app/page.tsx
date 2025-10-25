@@ -2,7 +2,7 @@
 'use client'
 
 import { useAccount } from 'wagmi';
-import { useIsEmployer } from '@/hooks/use-opera-contract';
+import { useIsEmployer } from '@/hooks/use-multi-token-contract';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';

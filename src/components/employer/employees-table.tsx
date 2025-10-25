@@ -3,9 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useReadContract, useReadContracts } from 'wagmi';
+import { useReadContract, useReadContracts, useWaitForTransactionReceipt } from 'wagmi';
 import { toast } from 'sonner';
-import { formatUsdc } from '@/lib/usdc-utils';
+import { formatToken } from '@/lib/token-utils';
+import { TokenSymbol } from '@/lib/token-config';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,10 +40,20 @@ import {
 import {
     useUpdateSalary,
     useRemoveEmployee,
-    type Employee
-} from '@/hooks/use-opera-contract';
-import { CONTRACT_ABI } from '@/lib/contracts';
-import { useContractAddress } from '@/hooks/use-contract-address';
+    useMultiTokenContractAddress
+} from '@/hooks/use-multi-token-contract';
+import { MULTI_TOKEN_CONTRACT_ABI } from '@/lib/contracts';
+
+// Employee type for multi-token
+export type Employee = {
+    walletAddress: string;
+    name: string;
+    salaryTokenSymbol: string;
+    salary: bigint;
+    lastPayment: bigint;
+    active: boolean;
+    employer: string;
+};
 
 // Maximum number of employees to display
 const MAX_EMPLOYEES = 20;
@@ -65,7 +76,7 @@ export default function EmployeesTable({
     maxDisplayed = MAX_EMPLOYEES
 }: EmployeesTableProps) {
     const router = useRouter();
-    const contractAddress = useContractAddress();
+    const contractAddress = useMultiTokenContractAddress();
 
     // State hooks
     const [searchTerm, setSearchTerm] = useState('');
@@ -84,7 +95,7 @@ export default function EmployeesTable({
         data: employeeCount,
         isLoading: isLoadingCount,
     } = useReadContract({
-        abi: CONTRACT_ABI,
+        abi: MULTI_TOKEN_CONTRACT_ABI,
         address: contractAddress as `0x${string}`,
         functionName: 'getEmployeeCountForEmployer',
         args: [employerAddress as `0x${string}`],
@@ -103,7 +114,7 @@ export default function EmployeesTable({
 
     // Step 3: Create queries for employee addresses
     const addressQueries = employeeIndices.map(index => ({
-        abi: CONTRACT_ABI,
+        abi: MULTI_TOKEN_CONTRACT_ABI,
         address: contractAddress,
         functionName: 'employerToEmployees',
         args: [employerAddress as `0x${string}`, BigInt(index)],
@@ -133,7 +144,7 @@ export default function EmployeesTable({
 
     // Step 4: Create queries for employee details
     const employeeQueries = employeeAddresses.map(address => ({
-        abi: CONTRACT_ABI,
+        abi: MULTI_TOKEN_CONTRACT_ABI,
         address: contractAddress,
         functionName: 'employees',
         args: [address as `0x${string}`],
@@ -165,10 +176,11 @@ export default function EmployeesTable({
                 processedEmployees.push({
                     walletAddress: data[0] || '',
                     name: data[1] || '',
-                    salary: data[2] || BigInt(0),
-                    lastPayment: data[3] || BigInt(0),
-                    active: data[4] || false,
-                    employer: data[5] || '',
+                    salaryTokenSymbol: data[2] || 'USDC',
+                    salary: data[3] || BigInt(0),
+                    lastPayment: data[4] || BigInt(0),
+                    active: data[5] || false,
+                    employer: data[6] || '',
                 } as Employee);
             }
         }
@@ -178,20 +190,31 @@ export default function EmployeesTable({
         setTotalCount(employeeCount ? Number(employeeCount) : 0);
     }, [employeeDetailsData, employeeCount]);
 
+    // State for selected token when updating salary
+    const [selectedToken, setSelectedToken] = useState<TokenSymbol>('USDC');
+
     // Transaction hooks
     const {
         updateSalary,
+        hash: updateHash,
         isPending: isUpdatePending,
-        isConfirming: isUpdateConfirming,
-        isConfirmed: isUpdateConfirmed
-    } = useUpdateSalary();
+        error: updateError
+    } = useUpdateSalary(selectedToken);
+
+    const { isLoading: isUpdateConfirming, isSuccess: isUpdateConfirmed } = useWaitForTransactionReceipt({
+        hash: updateHash
+    });
 
     const {
         removeEmployee,
+        hash: removeHash,
         isPending: isRemovePending,
-        isConfirming: isRemoveConfirming,
-        isConfirmed: isRemoveConfirmed
+        error: removeError
     } = useRemoveEmployee();
+
+    const { isLoading: isRemoveConfirming, isSuccess: isRemoveConfirmed } = useWaitForTransactionReceipt({
+        hash: removeHash
+    });
 
     // Filter employees based on search term
     useEffect(() => {
@@ -209,7 +232,7 @@ export default function EmployeesTable({
     }, [employees, searchTerm]);
 
     // Handle update salary
-    const handleUpdateSalary = async () => {
+    const handleUpdateSalary = () => {
         if (!editingEmployee) return;
 
         if (!newSalary || parseFloat(newSalary) <= 0) {
@@ -218,7 +241,11 @@ export default function EmployeesTable({
         }
 
         try {
-            await updateSalary(editingEmployee, newSalary);
+            const employee = employees.find(e => e.walletAddress === editingEmployee);
+            if (!employee) return;
+
+            const salaryBigInt = BigInt(Math.floor(parseFloat(newSalary) * 10 ** 6)); // Assume 6 decimals
+            updateSalary(editingEmployee as `0x${string}`, salaryBigInt);
         } catch (error) {
             console.error('Update salary error:', error);
             toast.error('Failed to update salary');
@@ -226,11 +253,11 @@ export default function EmployeesTable({
     };
 
     // Handle remove employee
-    const handleRemoveEmployee = async () => {
+    const handleRemoveEmployee = () => {
         if (!employeeToDelete) return;
 
         try {
-            await removeEmployee(employeeToDelete);
+            removeEmployee(employeeToDelete as `0x${string}`);
         } catch (error) {
             console.error('Remove employee error:', error);
             toast.error('Failed to remove employee');
@@ -240,7 +267,8 @@ export default function EmployeesTable({
     // Handle edit dialog
     const openEditDialog = (employee: Employee) => {
         setEditingEmployee(employee.walletAddress);
-        setNewSalary(formatUsdc(employee.salary, 6));
+        setSelectedToken(employee.salaryTokenSymbol as TokenSymbol);
+        setNewSalary(formatToken(employee.salary, employee.salaryTokenSymbol as TokenSymbol));
         setEditDialogOpen(true);
     };
 
@@ -321,7 +349,8 @@ export default function EmployeesTable({
                             <TableRow>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Wallet Address</TableHead>
-                                <TableHead>Salary (USDC)</TableHead>
+                                <TableHead>Salary</TableHead>
+                                <TableHead>Token</TableHead>
                                 <TableHead>Status</TableHead>
                                 {showActions && <TableHead className="text-right">Actions</TableHead>}
                             </TableRow>
@@ -330,7 +359,7 @@ export default function EmployeesTable({
                             {/* Show "no results" message inside the table when search returns no results */}
                             {hasNoResults ? (
                                 <TableRow>
-                                    <TableCell colSpan={showActions ? 5 : 4} className="text-center py-8">
+                                    <TableCell colSpan={showActions ? 6 : 5} className="text-center py-8">
                                         <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                         <p className="text-muted-foreground mb-2">No employees found</p>
                                         <p className="text-sm text-muted-foreground">Try a different search term</p>
@@ -344,7 +373,14 @@ export default function EmployeesTable({
                                         <TableCell className="font-mono text-xs">
                                             {employee.walletAddress.substring(0, 6)}...{employee.walletAddress.substring(employee.walletAddress.length - 4)}
                                         </TableCell>
-                                        <TableCell>{formatUsdc(employee.salary, 2)}</TableCell>
+                                        <TableCell className="font-mono">
+                                            {formatToken(employee.salary, employee.salaryTokenSymbol as TokenSymbol)}
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-xs font-medium">
+                                                {employee.salaryTokenSymbol === 'USDC' ? '💵' : '💶'} {employee.salaryTokenSymbol}
+                                            </span>
+                                        </TableCell>
                                         <TableCell>
                                             {employee.active ? (
                                                 <div className="flex items-center gap-1">
@@ -410,7 +446,7 @@ export default function EmployeesTable({
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                        <Label htmlFor="new-salary">New Monthly Salary (USDC)</Label>
+                        <Label htmlFor="new-salary">New Monthly Salary ({selectedToken})</Label>
                         <Input
                             id="new-salary"
                             type="number"

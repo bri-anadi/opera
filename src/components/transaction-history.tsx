@@ -195,7 +195,7 @@ export default function TransactionHistory({
                                             <div className="font-medium">{tx.details}</div>
                                             {tx.to && (
                                                 <div className="text-xs text-muted-foreground font-mono">
-                                                    {tx.type === TransactionType.PAYMENT ||
+                                                        {tx.type === TransactionType.PAYMENT ||
                                                         tx.type === TransactionType.EMPLOYEE_ADDED ||
                                                         tx.type === TransactionType.EMPLOYEE_REMOVED ||
                                                         tx.type === TransactionType.SALARY_UPDATED

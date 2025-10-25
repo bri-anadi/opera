@@ -4,7 +4,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { useIsEmployer } from '@/hooks/use-opera-contract'
+import { useIsEmployer } from '@/hooks/use-multi-token-contract'
 import { Loader2 } from 'lucide-react'
 
 type ProtectedRouteProps = {

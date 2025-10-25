@@ -1,8 +1,9 @@
 // src/hooks/use-transaction-history.tsx
 import { useState, useEffect } from 'react';
 import { useAccount, usePublicClient } from 'wagmi';
-import { formatUsdc } from '@/lib/usdc-utils';
-import { useContractAddress } from './use-contract-address';
+import { formatToken } from '@/lib/token-utils';
+import { TokenSymbol } from '@/lib/token-config';
+import { useMultiTokenContractAddress } from './use-multi-token-contract';
 
 // Transaction types
 export enum TransactionType {
@@ -20,6 +21,7 @@ export interface Transaction {
     type: TransactionType;
     timestamp: number;
     amount?: bigint;
+    tokenSymbol?: TokenSymbol;
     from?: string;
     to?: string;
     details?: string;
@@ -34,7 +36,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
     const { address } = useAccount();
     const targetAddress = employerAddress || address;
     const publicClient = usePublicClient();
-    const CONTRACT_ADDRESS = useContractAddress();
+    const CONTRACT_ADDRESS = useMultiTokenContractAddress();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -67,6 +69,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         inputs: [
                             { type: 'address', name: 'employerAddress', indexed: true },
                             { type: 'uint256', name: 'amount', indexed: false },
+                            { type: 'string', name: 'tokenSymbol', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -86,6 +89,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                             { type: 'address', name: 'employerAddress', indexed: true },
                             { type: 'address', name: 'employeeAddress', indexed: true },
                             { type: 'uint256', name: 'amount', indexed: false },
+                            { type: 'string', name: 'tokenSymbol', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -105,7 +109,8 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                             { type: 'address', name: 'employerAddress', indexed: true },
                             { type: 'address', name: 'employeeAddress', indexed: true },
                             { type: 'string', name: 'name', indexed: false },
-                            { type: 'uint256', name: 'salaryUsdc', indexed: false },
+                            { type: 'uint256', name: 'salary', indexed: false },
+                            { type: 'string', name: 'tokenSymbol', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -142,7 +147,8 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         inputs: [
                             { type: 'address', name: 'employerAddress', indexed: true },
                             { type: 'address', name: 'employeeAddress', indexed: true },
-                            { type: 'uint256', name: 'newSalaryUsdc', indexed: false },
+                            { type: 'uint256', name: 'newSalary', indexed: false },
+                            { type: 'string', name: 'tokenSymbol', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -161,6 +167,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         inputs: [
                             { type: 'address', name: 'winner', indexed: true },
                             { type: 'uint256', name: 'amount', indexed: false },
+                            { type: 'string', name: 'tokenSymbol', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -193,6 +200,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                 // Process deposit events
                 for (const event of depositEvents) {
                     const amount = event.args.amount as bigint;
+                    const tokenSymbol = event.args.tokenSymbol as TokenSymbol;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
                     allTransactions.push({
@@ -200,8 +208,9 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         type: TransactionType.DEPOSIT,
                         timestamp,
                         amount,
+                        tokenSymbol,
                         from: targetAddress as string,
-                        details: `Deposited ${formatUsdc(amount, 2)} USDC`,
+                        details: `Deposited ${formatToken(amount, tokenSymbol)} ${tokenSymbol}`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -210,6 +219,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                 // Process payment events
                 for (const event of paymentEvents) {
                     const amount = event.args.amount as bigint;
+                    const tokenSymbol = event.args.tokenSymbol as TokenSymbol;
                     const employeeAddress = event.args.employeeAddress as string;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
@@ -218,9 +228,10 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         type: TransactionType.PAYMENT,
                         timestamp,
                         amount,
+                        tokenSymbol,
                         from: targetAddress as string,
                         to: employeeAddress,
-                        details: `Paid ${formatUsdc(amount, 2)} USDC to employee`,
+                        details: `Paid ${formatToken(amount, tokenSymbol)} ${tokenSymbol} to employee`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -230,16 +241,19 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                 for (const event of employeeAddedEvents) {
                     const name = event.args.name as string;
                     const employeeAddress = event.args.employeeAddress as string;
-                    const salary = event.args.salaryUsdc as bigint;
+                    const salary = event.args.salary as bigint;
+                    const tokenSymbol = event.args.tokenSymbol as TokenSymbol;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
                     allTransactions.push({
                         id: `${event.transactionHash}-${event.logIndex}`,
                         type: TransactionType.EMPLOYEE_ADDED,
                         timestamp,
+                        amount: salary,
+                        tokenSymbol,
                         from: targetAddress as string,
                         to: employeeAddress,
-                        details: `Added employee ${name} with salary ${formatUsdc(salary, 2)} USDC`,
+                        details: `Added employee ${name} with salary ${formatToken(salary, tokenSymbol)} ${tokenSymbol}`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -265,16 +279,19 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                 // Process salary updated events
                 for (const event of salaryUpdatedEvents) {
                     const employeeAddress = event.args.employeeAddress as string;
-                    const newSalary = event.args.newSalaryUsdc as bigint;
+                    const newSalary = event.args.newSalary as bigint;
+                    const tokenSymbol = event.args.tokenSymbol as TokenSymbol;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
                     allTransactions.push({
                         id: `${event.transactionHash}-${event.logIndex}`,
                         type: TransactionType.SALARY_UPDATED,
                         timestamp,
+                        amount: newSalary,
+                        tokenSymbol,
                         from: targetAddress as string,
                         to: employeeAddress,
-                        details: `Updated salary to ${formatUsdc(newSalary, 2)} USDC`,
+                        details: `Updated salary to ${formatToken(newSalary, tokenSymbol)} ${tokenSymbol}`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -284,6 +301,7 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                 for (const event of bonusEvents) {
                     const winner = event.args.winner as string;
                     const amount = event.args.amount as bigint;
+                    const tokenSymbol = event.args.tokenSymbol as TokenSymbol;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
                     // Check if this bonus is relevant to any of our employees
@@ -294,8 +312,9 @@ export function useTransactionHistory(employerAddress?: string, limit: number = 
                         type: TransactionType.BONUS,
                         timestamp,
                         amount,
+                        tokenSymbol,
                         to: winner,
-                        details: `Bonus of ${formatUsdc(amount, 2)} USDC awarded`,
+                        details: `Bonus of ${formatToken(amount, tokenSymbol)} ${tokenSymbol} awarded`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -332,7 +351,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
     const { address } = useAccount();
     const targetAddress = employeeAddress || address;
     const publicClient = usePublicClient();
-    const CONTRACT_ADDRESS = useContractAddress();
+    const CONTRACT_ADDRESS = useMultiTokenContractAddress();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -365,6 +384,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                             { type: 'address', name: 'employerAddress', indexed: true },
                             { type: 'address', name: 'employeeAddress', indexed: true },
                             { type: 'uint256', name: 'amount', indexed: false },
+                            { type: 'string', name: 'tokenSymbol', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -383,6 +403,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                         inputs: [
                             { type: 'address', name: 'winner', indexed: true },
                             { type: 'uint256', name: 'amount', indexed: false },
+                            { type: 'string', name: 'tokenSymbol', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -401,7 +422,8 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                         inputs: [
                             { type: 'address', name: 'employerAddress', indexed: true },
                             { type: 'address', name: 'employeeAddress', indexed: true },
-                            { type: 'uint256', name: 'newSalaryUsdc', indexed: false },
+                            { type: 'uint256', name: 'newSalary', indexed: false },
+                            { type: 'string', name: 'tokenSymbol', indexed: false },
                         ],
                     },
                     fromBlock: startingBlock,
@@ -436,6 +458,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                 // Process payment events
                 for (const event of paymentEvents) {
                     const amount = event.args.amount as bigint;
+                    const tokenSymbol = event.args.tokenSymbol as TokenSymbol;
                     const employerAddress = event.args.employerAddress as string;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
@@ -444,9 +467,10 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                         type: TransactionType.PAYMENT,
                         timestamp,
                         amount,
+                        tokenSymbol,
                         from: employerAddress,
                         to: targetAddress as string,
-                        details: `Received salary payment of ${formatUsdc(amount, 2)} USDC`,
+                        details: `Received salary payment of ${formatToken(amount, tokenSymbol)} ${tokenSymbol}`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -455,6 +479,7 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                 // Process bonus events
                 for (const event of bonusEvents) {
                     const amount = event.args.amount as bigint;
+                    const tokenSymbol = event.args.tokenSymbol as TokenSymbol;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
                     allTransactions.push({
@@ -462,8 +487,9 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                         type: TransactionType.BONUS,
                         timestamp,
                         amount,
+                        tokenSymbol,
                         to: targetAddress as string,
-                        details: `Received bonus of ${formatUsdc(amount, 2)} USDC`,
+                        details: `Received bonus of ${formatToken(amount, tokenSymbol)} ${tokenSymbol}`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });
@@ -472,16 +498,19 @@ export function useEmployeeTransactionHistory(employeeAddress?: string, limit: n
                 // Process salary updated events
                 for (const event of salaryUpdatedEvents) {
                     const employerAddress = event.args.employerAddress as string;
-                    const newSalary = event.args.newSalaryUsdc as bigint;
+                    const newSalary = event.args.newSalary as bigint;
+                    const tokenSymbol = event.args.tokenSymbol as TokenSymbol;
                     const timestamp = blockTimestamps.get(event.blockNumber) || 0;
 
                     allTransactions.push({
                         id: `${event.transactionHash}-${event.logIndex}`,
                         type: TransactionType.SALARY_UPDATED,
                         timestamp,
+                        amount: newSalary,
+                        tokenSymbol,
                         from: employerAddress,
                         to: targetAddress as string,
-                        details: `Salary updated to ${formatUsdc(newSalary, 2)} USDC`,
+                        details: `Salary updated to ${formatToken(newSalary, tokenSymbol)} ${tokenSymbol}`,
                         blockNumber: Number(event.blockNumber),
                         transactionHash: event.transactionHash,
                     });

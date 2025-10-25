@@ -26,7 +26,6 @@ export function TokenSelector({
   onValueChange,
   disabled = false,
   label,
-  showIcon = true,
   showDescription = false,
   className = ''
 }: TokenSelectorProps) {
@@ -83,7 +82,7 @@ export function TokenSelectorCompact({
 }) {
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
-      <SelectTrigger className="w-[140px]">
+      <SelectTrigger className="w-full">
         <SelectValue>
           <div className="flex items-center gap-1.5">
             <span className="font-medium">{value}</span>
@@ -92,7 +91,6 @@ export function TokenSelectorCompact({
       </SelectTrigger>
       <SelectContent>
         {TOKEN_SYMBOLS.map((symbol) => {
-          const token = SUPPORTED_TOKENS[symbol];
           return (
             <SelectItem key={symbol} value={symbol}>
               <div className="flex items-center gap-1.5">

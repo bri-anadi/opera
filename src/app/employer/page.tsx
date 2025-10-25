@@ -25,9 +25,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import {
   Users,
-  Wallet,
   CalendarClock,
-  CircleDollarSign,
   Loader2,
   PlusCircle,
   Send,
@@ -36,7 +34,6 @@ import {
 import ProtectedRoute from '@/components/protected-route';
 import { TokenBalanceCard } from '@/components/token-balance-card';
 import { DepositDialogMultiToken } from '@/components/employer/deposit-dialog-multi-token';
-import { TokenSelectorCompact } from '@/components/ui/token-selector';
 import TransactionHistory from '@/components/transaction-history';
 import EmployeesTable from '@/components/employer/employees-table';
 
@@ -55,19 +52,18 @@ function EmployerDashboard() {
   const [selectedPaymentToken, setSelectedPaymentToken] = useState<TokenSymbol>(DEFAULT_TOKEN);
 
   // Employer info
-  const { name: employerName, active: isActive, isLoading: isLoadingEmployer } = useEmployerInfo();
+  const { name: employerName, isLoading: isLoadingEmployer } = useEmployerInfo();
   const { count: employeeCount, isLoading: isLoadingEmployeeCount } = useEmployeeCount();
 
   // Balances
   const { balances: contractBalances, isLoading: isLoadingBalances, refetchAll: refetchBalances } = useEmployerBalances();
-  const { salaries: monthlySalaries, isLoading: isLoadingSalaries, refetchAll: refetchSalaries } = useTotalMonthlySalaries();
+  const { salaries: monthlySalaries, isLoading: isLoadingSalaries } = useTotalMonthlySalaries();
   const walletBalances = useAllTokenBalances();
 
   // Payment hook for selected token
   const {
     payEmployees,
-    isPending: isPaymentPending,
-    hash: paymentHash
+    isPending: isPaymentPending
   } = usePayEmployees(selectedPaymentToken);
 
   // Handle deposit success
@@ -305,8 +301,6 @@ function EmployerDashboard() {
                 <EmployeesTable
                   employerAddress={address}
                   showSearch={true}
-                  showActions={true}
-                  maxDisplayed={10}
                   onAddEmployee={() => router.push('/employer/employees/add')}
                 />
               )}

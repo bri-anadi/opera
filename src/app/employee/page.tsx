@@ -171,7 +171,6 @@ export default function EmployeeDashboard() {
                         <div>
                             <p className="text-sm text-muted-foreground">Monthly Salary</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-2xl">{employee.salaryTokenSymbol === 'USDC' ? '💵' : '💶'}</span>
                                 <p className="font-medium text-2xl">
                                     {formatToken(employee.salary, employee.salaryTokenSymbol as TokenSymbol)} {employee.salaryTokenSymbol}
                                 </p>

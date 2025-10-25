@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { isAddress } from 'viem';
 import { toast } from 'sonner';
 
-import { TokenSymbol, DEFAULT_TOKEN, SUPPORTED_TOKENS } from '@/lib/token-config';
+import { TokenSymbol, DEFAULT_TOKEN } from '@/lib/token-config';
 import { parseToken, formatTokenWithCommas, isValidTokenAmount } from '@/lib/token-utils';
 import { useAddEmployee } from '@/hooks/use-multi-token-contract';
 import { useEmployerBalance } from '@/hooks/use-multi-token-contract';
@@ -92,7 +92,6 @@ function AddEmployeeMultiTokenForm() {
     }
   };
 
-  const token = SUPPORTED_TOKENS[selectedToken];
   const monthsOfRunway = employerBalance && parsedSalary > BigInt(0)
     ? Number(employerBalance) / Number(parsedSalary)
     : Infinity;
@@ -181,7 +180,7 @@ function AddEmployeeMultiTokenForm() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Enter the monthly salary in {selectedToken} (e.g., 5000 for {token.icon} 5,000/month)
+                Enter the monthly salary in {selectedToken} (e.g., 5000 for 5,000/month)
               </p>
             </div>
 
@@ -191,7 +190,6 @@ function AddEmployeeMultiTokenForm() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Monthly Salary:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{token.icon}</span>
                     <span className="font-mono font-bold text-lg">
                       {formatTokenWithCommas(parsedSalary, selectedToken, false)}
                     </span>

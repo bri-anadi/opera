@@ -2,9 +2,11 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useWaitForTransactionReceipt } from 'wagmi';
 import { useRouter } from 'next/navigation';
-import { useRegisterAsEmployer } from '@/hooks/use-opera-contract';
+import { useRegisterEmployer, useMultiTokenContractAddress } from '@/hooks/use-multi-token-contract';
+import { TokenSymbol, DEFAULT_TOKEN } from '@/lib/token-config';
+import { useApproveToken } from '@/hooks/use-token';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle2, Building } from 'lucide-react';
+import { TokenSelectorCompact } from '@/components/ui/token-selector';
 import ProtectedRoute from '@/components/protected-route';
 
 export default function RegisterPage() {
@@ -26,35 +29,74 @@ function RegisterEmployerForm() {
     const { address, isConnected } = useAccount();
     const router = useRouter();
     const [companyName, setCompanyName] = useState('');
-    const [, setIsRegistering] = useState(false);
+    const [selectedToken, setSelectedToken] = useState<TokenSymbol>(DEFAULT_TOKEN);
+    const [registrationStep, setRegistrationStep] = useState<'idle' | 'approving' | 'registering'>('idle');
 
-    // Use our centralized registration hook
+    // Get registration fee amount (10 tokens with 6 decimals)
+    const REGISTRATION_FEE = BigInt(10 * 10 ** 6);
+
+    // Get multi-token contract address (spender address for approval)
+    const contractAddress = useMultiTokenContractAddress();
+
+    // Approval hook for selected token
+    const {
+        approve: approveToken,
+        hash: approveHash,
+        isPending: isApprovePending,
+        error: approveError
+    } = useApproveToken(selectedToken);
+
+    const { isLoading: isApproveConfirming, isSuccess: isApproveConfirmed } = useWaitForTransactionReceipt({
+        hash: approveHash
+    });
+
+    // Registration hook
     const {
         register,
-        isPending,
-        isConfirming,
-        isConfirmed,
-        error
-    } = useRegisterAsEmployer();
+        hash: registerHash,
+        isPending: isRegisterPending,
+        error: registerError
+    } = useRegisterEmployer();
+
+    const { isLoading: isRegisterConfirming, isSuccess: isRegisterConfirmed } = useWaitForTransactionReceipt({
+        hash: registerHash
+    });
+
+    // Handle approval confirmation
+    useEffect(() => {
+        if (isApproveConfirmed && registrationStep === 'approving') {
+            toast.success('Token approved! Now registering...');
+            setRegistrationStep('registering');
+            register(companyName, selectedToken);
+        }
+    }, [isApproveConfirmed, registrationStep, companyName, selectedToken, register]);
 
     // Handle registration confirmation
     useEffect(() => {
-        if (isConfirmed) {
+        if (isRegisterConfirmed) {
             toast.success('Registration successful!');
             setTimeout(() => {
                 router.push('/employer');
             }, 2000);
         }
-    }, [isConfirmed, router]);
+    }, [isRegisterConfirmed, router]);
 
-    // Handle registration error
+    // Handle errors
     useEffect(() => {
-        if (error) {
-            console.error('Registration error:', error);
-            toast.error('Registration failed. Please try again.');
-            setIsRegistering(false);
+        if (approveError) {
+            console.error('Approval error:', approveError);
+            toast.error('Token approval failed. Please try again.');
+            setRegistrationStep('idle');
         }
-    }, [error]);
+    }, [approveError]);
+
+    useEffect(() => {
+        if (registerError) {
+            console.error('Registration error:', registerError);
+            toast.error('Registration failed. Please try again.');
+            setRegistrationStep('idle');
+        }
+    }, [registerError]);
 
     const handleRegister = async () => {
         if (!companyName.trim()) {
@@ -63,14 +105,20 @@ function RegisterEmployerForm() {
         }
 
         try {
-            setIsRegistering(true);
-            await register(companyName);
+            // Step 1: Approve token spending
+            setRegistrationStep('approving');
+            approveToken(contractAddress, REGISTRATION_FEE);
         } catch (err) {
             console.error('Registration error:', err);
             toast.error('Registration failed. Please try again.');
-            setIsRegistering(false);
+            setRegistrationStep('idle');
         }
     };
+
+    // Calculate loading states
+    const isPending = isApprovePending || isRegisterPending;
+    const isConfirming = isApproveConfirming || isRegisterConfirming;
+    const isConfirmed = isRegisterConfirmed;
 
     if (!isConnected) {
         return (
@@ -119,10 +167,22 @@ function RegisterEmployerForm() {
                             />
                         </div>
                         <div className="space-y-2">
+                            <Label>Payment Token</Label>
+                            <TokenSelectorCompact
+                                value={selectedToken}
+                                onValueChange={setSelectedToken}
+                                disabled={isPending || isConfirming}
+                            />
+                        </div>
+                        <div className="space-y-2">
                             <Label>Registration Fee</Label>
                             <div className="p-2 border rounded-md bg-muted/50">
-                                <p className="text-sm text-muted-foreground">A one-time registration fee of 10 USDC is required</p>
-                                <p className="text-xs text-muted-foreground mt-1">You&apos;ll need to approve USDC spending first</p>
+                                <p className="text-sm text-muted-foreground">
+                                    A one-time registration fee of <strong>10 {selectedToken}</strong> is required
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    You&apos;ll need to approve {selectedToken} spending first
+                                </p>
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -142,10 +202,14 @@ function RegisterEmployerForm() {
                         {isPending || isConfirming ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {isPending ? 'Confirming Transaction...' : 'Registering...'}
+                                {registrationStep === 'approving'
+                                    ? `Approving ${selectedToken}...`
+                                    : registrationStep === 'registering'
+                                    ? 'Registering...'
+                                    : 'Processing...'}
                             </>
                         ) : (
-                            'Register & Pay Fee'
+                            'Register & Pay 10 ' + selectedToken
                         )}
                     </Button>
                 </CardFooter>

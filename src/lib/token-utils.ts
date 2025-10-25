@@ -87,9 +87,8 @@ export function formatTokenWithIcon(
   amount: bigint | undefined,
   symbol: TokenSymbol
 ): string {
-  const token = SUPPORTED_TOKENS[symbol];
   const formatted = formatTokenWithCommas(amount, symbol, false);
-  return `${token.icon} ${formatted} ${symbol}`;
+  return `${formatted} ${symbol}`;
 }
 
 /**
@@ -135,8 +134,7 @@ export function cleanTokenInput(input: string): string {
 /**
  * Get minimum token amount (0.01 for 6 decimals, 0.000001 for 18 decimals, etc.)
  */
-export function getMinTokenAmount(symbol: TokenSymbol): bigint {
-  const token = SUPPORTED_TOKENS[symbol];
+export function getMinTokenAmount(): bigint {
   // Minimum is 1 in the smallest unit
   return BigInt(1);
 }
@@ -177,13 +175,6 @@ export function subtractTokenAmounts(a: bigint, b: bigint): bigint {
  */
 export function isZeroAmount(amount: bigint): boolean {
   return amount === BigInt(0);
-}
-
-/**
- * Get token icon
- */
-export function getTokenIcon(symbol: TokenSymbol): string {
-  return SUPPORTED_TOKENS[symbol].icon;
 }
 
 /**

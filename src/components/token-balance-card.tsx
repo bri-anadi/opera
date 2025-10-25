@@ -78,15 +78,12 @@ export function TokenBalanceCompact({
   balance,
   symbol,
   isLoading = false,
-  showIcon = true,
 }: {
   balance?: bigint;
   symbol: TokenSymbol;
   isLoading?: boolean;
   showIcon?: boolean;
 }) {
-  const token = SUPPORTED_TOKENS[symbol];
-
   if (isLoading) {
     return <Skeleton className="h-6 w-32" />;
   }

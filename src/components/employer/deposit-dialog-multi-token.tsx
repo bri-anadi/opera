@@ -35,7 +35,7 @@ export function DepositDialogMultiToken({
 
   // Token hooks
   const { balance: tokenBalance, refetch: refetchTokenBalance } = useTokenBalance(selectedToken);
-  const { needsApproval, currentAllowance } = useNeedsTokenApproval(
+  const { needsApproval } = useNeedsTokenApproval(
     selectedToken,
     contractAddress,
     parsedAmount

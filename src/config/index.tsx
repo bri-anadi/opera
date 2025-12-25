@@ -1,5 +1,5 @@
 // config/index.tsx
-import { cookieStorage, createStorage } from 'wagmi'
+import { cookieStorage, createStorage, type Storage } from 'wagmi'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { baseSepolia, base } from '@reown/appkit/networks'
 import { http } from 'wagmi'
@@ -17,7 +17,7 @@ export const networks = [base, baseSepolia]
 export const wagmiAdapter = new WagmiAdapter({
     storage: createStorage({
         storage: cookieStorage
-    }),
+    }) as Storage,
     ssr: true,
     transports: {
         [base.id]: http(`https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
